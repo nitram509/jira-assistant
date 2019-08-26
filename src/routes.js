@@ -22,6 +22,7 @@ const UserGroupsComponent = React.lazy(() => import('./components/UserGroup'));
 const FaqViewComponent = React.lazy(() => import('./views/faq-view/FaqView'));
 const ContributeComponent = React.lazy(() => import('./views/contribute/Contribute'));
 const FeedbackViewComponent = React.lazy(() => import('./views/feedback-view/FeedbackView'));
+const RoadmapViewComponent = React.lazy(() => import('./views/roadmap-view/RoadmapView'));
 
 export const isQuickView = document.location.href.indexOf('?quick=true') > -1;
 
@@ -95,6 +96,10 @@ const sessionBasedRoute = [
     {
         path: '/feedback',
         component: FeedbackViewComponent
+    },
+    {
+        path: '/planning/roadmap',
+        component: RoadmapViewComponent
     }
 ];
 export default sessionBasedRoute;

@@ -89,6 +89,20 @@ export const navigation = [
     },
     {
         title: true,
+        name: 'Planning'
+    },
+    {
+        name: 'Roadmap',
+        id: 'Planning-Roadmap',
+        url: '/planning/roadmap',
+        icon: 'fa fa-area-chart',
+        badge: {
+            variant: 'info',
+            text: 'BETA'
+        }
+    },
+    {
+        title: true,
         name: 'Settings'
     },
     {
