@@ -26,6 +26,7 @@ import { splittify } from './ganttUtilities'
 import { Ganttalendar } from "./ganttalendar";
 
 import $ from "jquery"
+
 var TaskFactory = require('./ganttTask').TaskFactory;
 var Resource = require('./ganttTask').Resource;
 var Task = require('./ganttTask').Task;
@@ -576,6 +577,1074 @@ export class GanttMaster {
             localStorage.setItem("TWPGanttCollTasks", collTasks);
         }
     };
+
+    getTask(taskId) {
+        var ret;
+        for (var i = 0; i < this.tasks.length; i++) {
+            var tsk = this.tasks[i];
+            if (tsk.id == taskId) {
+                ret = tsk;
+                break;
+            }
+        }
+        return ret;
+    };
+
+    getResource(resId) {
+        var ret;
+        for (var i = 0; i < this.resources.length; i++) {
+            var res = this.resources[i];
+            if (res.id == resId) {
+                ret = res;
+                break;
+            }
+        }
+        return ret;
+    };
+
+    createTask(id, name, code, level, start, duration) {
+        var factory = new TaskFactory();
+        return factory.build(id, name, code, level, start, duration);
+    };
+
+
+    getOrCreateResource(id, name) {
+        var res = this.getResource(id);
+        if (!res && id && name) {
+            res = this.createResource(id, name);
+        }
+        return res
+    };
+
+    createResource(id, name) {
+        var res = new Resource(id, name);
+        this.resources.push(res);
+        return res;
+    };
+
+    //update depends strings
+    updateDependsStrings() {
+        //remove all deps
+        for (let i = 0; i < this.tasks.length; i++) {
+            this.tasks[i].depends = "";
+        }
+
+        for (let i = 0; i < this.links.length; i++) {
+            var link = this.links[i];
+            var dep = link.to.depends;
+            link.to.depends = link.to.depends + (link.to.depends == "" ? "" : ",") + (link.from.getRow() + 1) + (link.lag ? ":" + link.lag : "");
+        }
+
+    };
+
+    removeLink(fromTask, toTask) {
+        //console.debug("removeLink");
+        if (!this.permissions.canWrite || (!fromTask.canWrite && !toTask.canWrite))
+            return;
+
+        this.beginTransaction();
+        var found = false;
+        for (var i = 0; i < this.links.length; i++) {
+            if (this.links[i].from == fromTask && this.links[i].to == toTask) {
+                this.links.splice(i, 1);
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            this.updateDependsStrings();
+            if (this.updateLinks(toTask))
+                this.changeTaskDates(toTask, toTask.start, toTask.end); // fake change to force date recomputation from dependencies
+        }
+        this.endTransaction();
+    };
+
+    __removeAllLinks(task, openTrans) {
+
+        if (openTrans)
+            this.beginTransaction();
+        var found = false;
+        for (var i = 0; i < this.links.length; i++) {
+            if (this.links[i].from == task || this.links[i].to == task) {
+                this.links.splice(i, 1);
+                found = true;
+            }
+        }
+
+        if (found) {
+            this.updateDependsStrings();
+        }
+        if (openTrans)
+            this.endTransaction();
+    };
+
+    changeTaskDeps(task) {
+        return task.moveTo(task.start, false, true);
+    };
+
+    changeTaskDates(task, start, end) {
+        //console.debug("changeTaskDates",task, start, end)
+        return task.setPeriod(start, end);
+    };
+
+
+    moveTask(task, newStart) {
+        return task.moveTo(newStart, true, true);
+    };
+
+    taskIsChanged() {
+        var master = this;
+        //refresh is executed only once every 50ms
+        this.element.stopTime("gnnttaskIsChanged");
+        this.element.oneTime(50, "gnnttaskIsChanged", function () {
+            master.redraw();
+            master.element.trigger("ganttalendar.redrawCompleted");
+        });
+    };
+
+    checkButtonPermissions() {
+        var ganttButtons = $(".ganttButtonBar");
+        //hide buttons basing on permissions
+        if (!this.permissions.canWrite)
+            ganttButtons.find(".requireCanWrite").hide();
+
+        if (!this.permissions.canAdd)
+            ganttButtons.find(".requireCanAdd").hide();
+
+        if (!this.permissions.canInOutdent)
+            ganttButtons.find(".requireCanInOutdent").hide();
+
+        if (!this.permissions.canMoveUpDown)
+            ganttButtons.find(".requireCanMoveUpDown").hide();
+
+        if (!this.permissions.canDelete)
+            ganttButtons.find(".requireCanDelete").hide();
+
+        if (!this.permissions.canSeeCriticalPath)
+            ganttButtons.find(".requireCanSeeCriticalPath").hide();
+
+        if (!this.permissions.canAddIssue)
+            ganttButtons.find(".requireCanAddIssue").hide();
+    };
+
+    redraw() {
+        this.editor.redraw();
+        this.ganttalendar.redraw();
+    };
+
+    showTaskEditor(taskId) {
+        var task = this.getTask(taskId);
+        task.rowElement.find(".edit").click();
+    };
+
+    saveProject() {
+        return this.saveGantt(false);
+    };
+
+    saveGantt(forTransaction) {
+        //var prof = new Profiler("gm_saveGantt");
+        var saved = [];
+        for (var i = 0; i < this.tasks.length; i++) {
+            var task = this.tasks[i];
+            var cloned = task.clone();
+
+            //shift back to server side timezone
+            if (!forTransaction) {
+                cloned.start -= this.serverClientTimeOffset;
+                cloned.end -= this.serverClientTimeOffset;
+            }
+
+            saved.push(cloned);
+        }
+
+        var ret = {tasks: saved};
+        if (this.currentTask) {
+            ret.selectedRow = this.currentTask.getRow();
+        }
+
+        ret.deletedTaskIds = this.deletedTaskIds;  //this must be consistent with transactions and undo
+
+        if (!forTransaction) {
+            ret.resources = this.resources;
+            ret.roles = this.roles;
+            ret.canWrite = this.permissions.canWrite;
+            ret.canWriteOnParent = this.permissions.canWriteOnParent;
+            ret.zoom = this.ganttalendar.zoom;
+
+            //save collapsed tasks on localStorage
+            this.storeCollapsedTasks();
+
+            //mark un-changed task and assignments
+            this.markUnChangedTasksAndAssignments(ret);
+
+            //si aggiunge il commento al cambiamento di date/status
+            ret.changesReasonWhy = $("#LOG_CHANGES").val();
+
+        }
+
+        //prof.stop();
+        return ret;
+    };
+
+    markUnChangedTasksAndAssignments(newProject) {
+        //console.debug("markUnChangedTasksAndAssignments");
+        //si controlla che ci sia qualcosa di cambiato, ovvero che ci sia l'undo stack
+        if (this.__undoStack.length > 0) {
+            var oldProject = JSON.parse(ge.__undoStack[0]);
+            //si looppano i "nuovi" task
+            for (var i = 0; i < newProject.tasks.length; i++) {
+                var newTask = newProject.tasks[i];
+                //se è un task che c'erà già
+                if (typeof (newTask.id) == "string" && !newTask.id.startsWith("tmp_")) {
+                    //si recupera il vecchio task
+                    var oldTask;
+                    for (var j = 0; j < oldProject.tasks.length; j++) {
+                        if (oldProject.tasks[j].id == newTask.id) {
+                            oldTask = oldProject.tasks[j];
+                            break;
+                        }
+                    }
+
+                    //si controlla se ci sono stati cambiamenti
+                    var taskChanged =
+                        oldTask.id != newTask.id ||
+                        oldTask.code != newTask.code ||
+                        oldTask.name != newTask.name ||
+                        oldTask.start != newTask.start ||
+                        oldTask.startIsMilestone != newTask.startIsMilestone ||
+                        oldTask.end != newTask.end ||
+                        oldTask.endIsMilestone != newTask.endIsMilestone ||
+                        oldTask.duration != newTask.duration ||
+                        oldTask.status != newTask.status ||
+                        oldTask.typeId != newTask.typeId ||
+                        oldTask.relevance != newTask.relevance ||
+                        oldTask.progress != newTask.progress ||
+                        oldTask.progressByWorklog != newTask.progressByWorklog ||
+                        oldTask.description != newTask.description ||
+                        oldTask.level != newTask.level ||
+                        oldTask.depends != newTask.depends;
+
+                    newTask.unchanged = !taskChanged;
+
+
+                    //se ci sono assegnazioni
+                    if (newTask.assigs && newTask.assigs.length > 0) {
+
+                        //se abbiamo trovato il vecchio task e questo aveva delle assegnazioni
+                        if (oldTask && oldTask.assigs && oldTask.assigs.length > 0) {
+                            for (var j = 0; j < oldTask.assigs.length; j++) {
+                                var oldAssig = oldTask.assigs[j];
+                                //si cerca la nuova assegnazione corrispondente
+                                var newAssig;
+                                for (var k = 0; k < newTask.assigs.length; k++) {
+                                    if (oldAssig.id == newTask.assigs[k].id) {
+                                        newAssig = newTask.assigs[k];
+                                        break;
+                                    }
+                                }
+
+                                //se c'è una nuova assig corrispondente
+                                if (newAssig) {
+                                    //si confrontano i valori per vedere se è cambiata
+                                    newAssig.unchanged =
+                                        newAssig.resourceId == oldAssig.resourceId &&
+                                        newAssig.roleId == oldAssig.roleId &&
+                                        newAssig.effort == oldAssig.effort;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    loadCollapsedTasks() {
+        var collTasks = [];
+        if (localStorage) {
+            if (localStorage.getItem("TWPGanttCollTasks"))
+                collTasks = localStorage.getItem("TWPGanttCollTasks");
+            return collTasks;
+        }
+    };
+
+    updateLinks(task) {
+        //console.debug("updateLinks",task);
+        //var prof= new Profiler("gm_updateLinks");
+
+        // defines isLoop function
+        function isLoop(task, target, visited) {
+            //var prof= new Profiler("gm_isLoop");
+            //console.debug("isLoop :"+task.name+" - "+target.name);
+            if (target == task) {
+                return true;
+            }
+
+            var sups = task.getSuperiors();
+
+            //my parent' superiors are my superiors too
+            var p = task.getParent();
+            while (p) {
+                sups = sups.concat(p.getSuperiors());
+                p = p.getParent();
+            }
+
+            //my children superiors are my superiors too
+            var chs = task.getChildren();
+            for (var i = 0; i < chs.length; i++) {
+                sups = sups.concat(chs[i].getSuperiors());
+            }
+
+            var loop = false;
+            //check superiors
+            for (var i = 0; i < sups.length; i++) {
+                var supLink = sups[i];
+                if (supLink.from == target) {
+                    loop = true;
+                    break;
+                } else {
+                    if (visited.indexOf(supLink.from.id + "x" + target.id) <= 0) {
+                        visited.push(supLink.from.id + "x" + target.id);
+                        if (isLoop(supLink.from, target, visited)) {
+                            loop = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            //check target parent
+            var tpar = target.getParent();
+            if (tpar) {
+                if (visited.indexOf(task.id + "x" + tpar.id) <= 0) {
+                    visited.push(task.id + "x" + tpar.id);
+                    if (isLoop(task, tpar, visited)) {
+                        loop = true;
+                    }
+                }
+            }
+
+            //prof.stop();
+            return loop;
+        }
+
+        //remove my depends
+        this.links = this.links.filter(function (link) {
+            return link.to != task;
+        });
+
+        var todoOk = true;
+        if (task.depends) {
+
+            //cannot depend from an ancestor
+            var parents = task.getParents();
+            //cannot depend from descendants
+            var descendants = task.getDescendant();
+
+            var deps = task.depends.split(",");
+            var newDepsString = "";
+
+            var visited = [];
+            var depsEqualCheck = [];
+            for (var j = 0; j < deps.length; j++) {
+                var depString = deps[j]; // in the form of row(lag) e.g. 2:3,3:4,5
+                var supStr = depString;
+                var lag = 0;
+                var pos = depString.indexOf(":");
+                if (pos > 0) {
+                    supStr = depString.substr(0, pos);
+                    var lagStr = depString.substr(pos + 1);
+                    lag = Math.ceil((stringToDuration(lagStr)) / Date.workingPeriodResolution) * Date.workingPeriodResolution;
+                }
+
+                var sup = this.tasks[parseInt(supStr) - 1];
+
+                if (sup) {
+                    if (parents && parents.indexOf(sup) >= 0) {
+                        this.setErrorOnTransaction("\"" + task.name + "\"\n" + GanttMaster.messages.CANNOT_DEPENDS_ON_ANCESTORS + "\n\"" + sup.name + "\"");
+                        todoOk = false;
+
+                    } else if (descendants && descendants.indexOf(sup) >= 0) {
+                        this.setErrorOnTransaction("\"" + task.name + "\"\n" + GanttMaster.messages.CANNOT_DEPENDS_ON_DESCENDANTS + "\n\"" + sup.name + "\"");
+                        todoOk = false;
+
+                    } else if (isLoop(sup, task, visited)) {
+                        todoOk = false;
+                        this.setErrorOnTransaction(GanttMaster.messages.CIRCULAR_REFERENCE + "\n\"" + task.id + " - " + task.name + "\" -> \"" + sup.id + " - " + sup.name + "\"");
+
+                    } else if (depsEqualCheck.indexOf(sup) >= 0) {
+                        this.setErrorOnTransaction(GanttMaster.messages.CANNOT_CREATE_SAME_LINK + "\n\"" + sup.name + "\" -> \"" + task.name + "\"");
+                        todoOk = false;
+
+                    } else {
+                        this.links.push(new Link(sup, task, lag));
+                        newDepsString = newDepsString + (newDepsString.length > 0 ? "," : "") + supStr + (lag == 0 ? "" : ":" + durationToString(lag));
+                    }
+
+                    if (todoOk)
+                        depsEqualCheck.push(sup);
+                }
+            }
+            task.depends = newDepsString;
+        }
+        //prof.stop();
+
+        return todoOk;
+    };
+
+    moveUpCurrentTask() {
+        var self = this;
+        //console.debug("moveUpCurrentTask",self.currentTask)
+        if (self.currentTask) {
+            if (!(self.permissions.canWrite || self.currentTask.canWrite) || !self.permissions.canMoveUpDown)
+                return;
+
+            self.beginTransaction();
+            self.currentTask.moveUp();
+            self.endTransaction();
+        }
+    };
+
+    moveDownCurrentTask() {
+        var self = this;
+        //console.debug("moveDownCurrentTask",self.currentTask)
+        if (self.currentTask) {
+            if (!(self.permissions.canWrite || self.currentTask.canWrite) || !self.permissions.canMoveUpDown)
+                return;
+
+            self.beginTransaction();
+            self.currentTask.moveDown();
+            self.endTransaction();
+        }
+    };
+
+    outdentCurrentTask() {
+        var self = this;
+        if (self.currentTask) {
+            var par = self.currentTask.getParent();
+            //can outdent if you have canRight on current task and on its parent and canAdd on grandfather
+            if (!self.currentTask.canWrite || !par.canWrite || !par.getParent() || !par.getParent().canAdd)
+                return;
+
+            self.beginTransaction();
+            self.currentTask.outdent();
+            self.endTransaction();
+
+            //[expand]
+            if (par) self.editor.refreshExpandStatus(par);
+        }
+    };
+
+    indentCurrentTask() {
+        var self = this;
+        if (self.currentTask) {
+
+            //can indent if you have canRight on current and canAdd on the row above
+            var row = self.currentTask.getRow();
+            if (!self.currentTask.canWrite || row <= 0 || !self.tasks[row - 1].canAdd)
+                return;
+
+            self.beginTransaction();
+            self.currentTask.indent();
+            self.endTransaction();
+        }
+    };
+
+    addBelowCurrentTask() {
+        var self = this;
+        //console.debug("addBelowCurrentTask",self.currentTask)
+        var factory = new TaskFactory();
+        var ch;
+        var row = 0;
+        if (self.currentTask && self.currentTask.name) {
+            //add below add a brother if current task is not already a parent
+            var addNewBrother = !(self.currentTask.isParent() || self.currentTask.level == 0);
+
+            var canAddChild = self.currentTask.canAdd;
+            var canAddBrother = self.currentTask.getParent() && self.currentTask.getParent().canAdd;
+
+            //if you cannot add a brother you will try to add a child
+            addNewBrother = addNewBrother && canAddBrother;
+
+            if (!canAddBrother && !canAddChild)
+                return;
+
+
+            ch = factory.build("tmp_" + new Date().getTime(), "", "", self.currentTask.level + (addNewBrother ? 0 : 1), self.currentTask.start, 1);
+            row = self.currentTask.getRow() + 1;
+
+            if (row > 0) {
+                self.beginTransaction();
+                var task = self.addTask(ch, row);
+                if (task) {
+                    task.rowElement.click();
+                    task.rowElement.find("[name=name]").focus();
+                }
+                self.endTransaction();
+            }
+        }
+    };
+
+    addAboveCurrentTask() {
+        var self = this;
+        // console.debug("addAboveCurrentTask",self.currentTask)
+
+        //check permissions
+        if ((self.currentTask.getParent() && !self.currentTask.getParent().canAdd))
+            return;
+
+        var factory = new TaskFactory();
+
+        var ch;
+        var row = 0;
+        if (self.currentTask && self.currentTask.name) {
+            //cannot add brothers to root
+            if (self.currentTask.level <= 0)
+                return;
+
+            ch = factory.build("tmp_" + new Date().getTime(), "", "", self.currentTask.level, self.currentTask.start, 1);
+            row = self.currentTask.getRow();
+
+            if (row > 0) {
+                self.beginTransaction();
+                var task = self.addTask(ch, row);
+                if (task) {
+                    task.rowElement.click();
+                    task.rowElement.find("[name=name]").focus();
+                }
+                self.endTransaction();
+            }
+        }
+    };
+
+    deleteCurrentTask(taskId) {
+        //console.debug("deleteCurrentTask",this.currentTask , this.isMultiRoot)
+        var self = this;
+
+        var task;
+        if (taskId)
+            task = self.getTask(taskId);
+        else
+            task = self.currentTask;
+
+        if (!task || !self.permissions.canDelete && !task.canDelete)
+            return;
+
+        var taskIsEmpty = task.name == "";
+
+        var row = task.getRow();
+        if (task && (row > 0 || self.isMultiRoot || task.isNew())) {
+            var par = task.getParent();
+            self.beginTransaction();
+            task.deleteTask();
+            task = undefined;
+
+            //recompute depends string
+            self.updateDependsStrings();
+
+            //redraw
+            self.taskIsChanged();
+
+            //[expand]
+            if (par)
+                self.editor.refreshExpandStatus(par);
+
+
+            //focus next row
+            row = row > self.tasks.length - 1 ? self.tasks.length - 1 : row;
+            if (!taskIsEmpty && row >= 0) {
+                task = self.tasks[row];
+                task.rowElement.click();
+                task.rowElement.find("[name=name]").focus();
+            }
+            self.endTransaction();
+        }
+    };
+
+    collapseAll() {
+        //console.debug("collapseAll");
+        if (this.currentTask) {
+            this.currentTask.collapsed = true;
+            var desc = this.currentTask.getDescendant();
+            for (var i = 0; i < desc.length; i++) {
+                if (desc[i].isParent()) // set collapsed only if is a parent
+                    desc[i].collapsed = true;
+                desc[i].rowElement.hide();
+            }
+
+            this.redraw();
+
+            //store collapse statuses
+            this.storeCollapsedTasks();
+        }
+    };
+
+    fullScreen() {
+        //console.debug("fullScreen");
+        this.workSpace.toggleClass("ganttFullScreen").resize();
+        $("#fullscrbtn .teamworkIcon").html(this.workSpace.is(".ganttFullScreen") ? "€" : "@");
+    };
+
+    expandAll() {
+        //console.debug("expandAll");
+        if (this.currentTask) {
+            this.currentTask.collapsed = false;
+            var desc = this.currentTask.getDescendant();
+            for (var i = 0; i < desc.length; i++) {
+                desc[i].collapsed = false;
+                desc[i].rowElement.show();
+            }
+
+            this.redraw();
+
+            //store collapse statuses
+            this.storeCollapsedTasks();
+
+        }
+    };
+
+    collapse(task, all) {
+        //console.debug("collapse",task)
+        task.collapsed = true;
+        task.rowElement.addClass("collapsed");
+
+        var descs = task.getDescendant();
+        for (var i = 0; i < descs.length; i++)
+            descs[i].rowElement.hide();
+
+        this.redraw();
+
+        //store collapse statuses
+        this.storeCollapsedTasks();
+    };
+
+    getCollapsedDescendant() {
+        var allTasks = this.tasks;
+        var collapsedDescendant = [];
+        for (var i = 0; i < allTasks.length; i++) {
+            var task = allTasks[i];
+            if (collapsedDescendant.indexOf(task) >= 0) continue;
+            if (task.collapsed) collapsedDescendant = collapsedDescendant.concat(task.getDescendant());
+        }
+        return collapsedDescendant;
+    }
+
+    addIssue() {
+        var self = this;
+
+        if (self.currentTask && self.currentTask.isNew()) {
+            alert(GanttMaster.messages.PLEASE_SAVE_PROJECT);
+            return;
+        }
+        if (!self.currentTask || !self.currentTask.canAddIssue)
+            return;
+
+        // openIssueEditorInBlack('0',"AD","ISSUE_TASK="+self.currentTask.id);
+    };
+
+    openExternalEditor() {
+        //console.debug("openExternalEditor ")
+        var self = this;
+        if (!self.currentTask)
+            return;
+
+        if (self.currentTask.isNew()) {
+            alert(GanttMaster.messages.PLEASE_SAVE_PROJECT);
+            return;
+        }
+
+        //window.location.href=contextPath+"/applications/teamwork/task/taskEditor.jsp?CM=ED&OBJID="+self.currentTask.id;
+    };
+
+    beginTransaction() {
+        if (!this.__currentTransaction) {
+            this.__currentTransaction = {
+                snapshot: JSON.stringify(this.saveGantt(true)),
+                errors: []
+            };
+        } else {
+            console.error("Cannot open twice a transaction");
+        }
+        return this.__currentTransaction;
+    };
+
+//this function notify an error to a transaction -> transaction will rollback
+    setErrorOnTransaction(errorMessage, task) {
+        if (this.__currentTransaction) {
+            this.__currentTransaction.errors.push({msg: errorMessage, task: task});
+        } else {
+            console.error(errorMessage);
+        }
+    };
+
+    isTransactionInError() {
+        if (!this.__currentTransaction) {
+            console.error("Transaction never started.");
+            return true;
+        } else {
+            return this.__currentTransaction.errors.length > 0
+        }
+
+    };
+
+    endTransaction() {
+        if (!this.__currentTransaction) {
+            console.error("Transaction never started.");
+            return true;
+        }
+
+        var ret = true;
+
+        //no error -> commit
+        if (this.__currentTransaction.errors.length <= 0) {
+            //console.debug("committing transaction");
+
+            //put snapshot in undo
+            this.__undoStack.push(this.__currentTransaction.snapshot);
+            //clear redo stack
+            this.__redoStack = [];
+
+            //shrink ganttalendar bundaries
+            this.ganttalendar.shrinkBoundaries();
+            this.taskIsChanged(); //enqueue for ganttalendar refresh
+
+
+            //error -> rollback
+        } else {
+            ret = false;
+            //console.debug("rolling-back transaction");
+
+            //compose error message
+            var msg = "ERROR:\n";
+            for (var i = 0; i < this.__currentTransaction.errors.length; i++) {
+                var err = this.__currentTransaction.errors[i];
+                msg = msg + err.msg + "\n\n";
+            }
+            alert(msg);
+
+
+            //try to restore changed tasks
+            var oldTasks = JSON.parse(this.__currentTransaction.snapshot);
+            this.deletedTaskIds = oldTasks.deletedTaskIds;
+            this.__inUndoRedo = true; // avoid Undo/Redo stacks reset
+            this.loadTasks(oldTasks.tasks, oldTasks.selectedRow);
+            this.redraw();
+
+        }
+        //reset transaction
+        this.__currentTransaction = undefined;
+
+        //show/hide save button
+        this.saveRequired();
+
+        //[expand]
+        this.editor.refreshExpandStatus(this.currentTask);
+
+        return ret;
+    };
+
+// inhibit undo-redo
+    checkpoint() {
+        this.__undoStack = [];
+        this.__redoStack = [];
+        this.saveRequired();
+    };
+
+    undo() {
+        //console.debug("undo before:",this.__undoStack,this.__redoStack);
+        if (this.__undoStack.length > 0) {
+            var his = this.__undoStack.pop();
+            this.__redoStack.push(JSON.stringify(this.saveGantt()));
+            var oldTasks = JSON.parse(his);
+            this.deletedTaskIds = oldTasks.deletedTaskIds;
+            this.__inUndoRedo = true; // avoid Undo/Redo stacks reset
+            this.loadTasks(oldTasks.tasks, oldTasks.selectedRow);
+            this.redraw();
+            //show/hide save button
+            this.saveRequired();
+        }
+    };
+
+    redo() {
+        //console.debug("redo before:",undoStack,redoStack);
+        if (this.__redoStack.length > 0) {
+            var his = this.__redoStack.pop();
+            this.__undoStack.push(JSON.stringify(this.saveGantt()));
+            var oldTasks = JSON.parse(his);
+            this.deletedTaskIds = oldTasks.deletedTaskIds;
+            this.__inUndoRedo = true; // avoid Undo/Redo stacks reset
+            this.loadTasks(oldTasks.tasks, oldTasks.selectedRow);
+            this.redraw();
+            //console.debug("redo after:",undoStack,redoStack);
+
+            this.saveRequired();
+        }
+    };
+
+    saveRequired() {
+        //console.debug("saveRequired")
+        //show/hide save button
+        if (this.__undoStack.length > 0) {
+            $("#saveGanttButton").removeClass("disabled");
+            $("form[alertOnChange] #Gantt").val(new Date().getTime()); // set a fake variable as dirty
+            this.element.trigger("saveRequired.ganttalendar", [true]);
+
+
+        } else {
+            $("#saveGanttButton").addClass("disabled");
+            $("form[alertOnChange] #Gantt").updateOldValue(); // set a fake variable as clean
+            this.element.trigger("saveRequired.ganttalendar", [false]);
+
+        }
+    };
+
+    print() {
+        this.ganttalendar.redrawTasks(true);
+        //print();
+    };
+
+    resize() {
+        var self = this;
+        //console.debug("GanttMaster.resize")
+        this.element.stopTime("resizeRedraw").oneTime(50, "resizeRedraw", function () {
+            self.splitter.resize();
+            self.numOfVisibleRows = Math.ceil(self.element.height() / self.rowHeight);
+            self.firstScreenLine = Math.floor(self.splitter.firstBox.scrollTop() / self.rowHeight);
+            self.ganttalendar.redrawTasks();
+        });
+    };
+
+    scrolled(oldFirstRow) {
+        var self = this;
+        var newFirstRow = self.firstScreenLine;
+
+        //if scroll something
+        if (newFirstRow != oldFirstRow) {
+            //console.debug("Ganttalendar.scrolled oldFirstRow:"+oldFirstRow+" new firstScreenLine:"+newFirstRow);
+
+            var collapsedDescendant = self.getCollapsedDescendant();
+
+            var scrollDown = newFirstRow > oldFirstRow;
+            var startRowDel;
+            var endRowDel;
+            var startRowAdd;
+            var endRowAdd;
+
+            if (scrollDown) {
+                startRowDel = oldFirstRow - self.rowBufferSize;
+                endRowDel = newFirstRow - self.rowBufferSize;
+                startRowAdd = Math.max(oldFirstRow + self.numOfVisibleRows + self.rowBufferSize, endRowDel);
+                endRowAdd = newFirstRow + self.numOfVisibleRows + self.rowBufferSize;
+            } else {
+                startRowDel = newFirstRow + self.numOfVisibleRows + self.rowBufferSize;
+                endRowDel = oldFirstRow + self.numOfVisibleRows + self.rowBufferSize;
+                startRowAdd = newFirstRow - self.rowBufferSize;
+                endRowAdd = Math.min(oldFirstRow - self.rowBufferSize, startRowDel);
+            }
+
+            var firstVisibleRow = newFirstRow - self.rowBufferSize; //ignoring collapsed tasks
+            var lastVisibleRow = newFirstRow + self.numOfVisibleRows + self.rowBufferSize;
+
+
+            //console.debug("remove startRowDel:"+startRowDel+" endRowDel:"+endRowDel )
+            //console.debug("add startRowAdd:"+startRowAdd+" endRowAdd:"+endRowAdd)
+
+            var row = 0;
+            self.firstVisibleTaskIndex = -1;
+            for (var i = 0; i < self.tasks.length; i++) {
+                var task = self.tasks[i];
+                if (collapsedDescendant.indexOf(task) >= 0) {
+                    continue;
+                }
+
+                //remove rows on top
+                if (row >= startRowDel && row < endRowDel) {
+                    if (task.ganttElement)
+                        task.ganttElement.remove();
+                    if (task.ganttBaselineElement)
+                        task.ganttBaselineElement.remove();
+
+                    //add missing ones
+                } else if (row >= startRowAdd && row < endRowAdd) {
+                    self.ganttalendar.drawTask(task);
+                }
+
+                if (row >= firstVisibleRow && row < lastVisibleRow) {
+                    self.firstVisibleTaskIndex = self.firstVisibleTaskIndex == -1 ? i : self.firstVisibleTaskIndex;
+                    self.lastVisibleTaskIndex = i;
+                }
+
+                row++
+            }
+        }
+    };
+
+    /**
+     * Compute the critical path using Backflow algorithm.
+     * Translated from Java code supplied by M. Jessup here http://stackoverflow.com/questions/2985317/critical-path-method-algorithm
+     *
+     * For each task computes:
+     * earlyStart, earlyFinish, latestStart, latestFinish, criticalCost
+     *
+     * A task on the critical path has isCritical=true
+     * A task not in critical path can float by latestStart-earlyStart days
+     *
+     * If you use critical path avoid usage of dependencies between different levels of tasks
+     *
+     * WARNNG: It ignore milestones!!!!
+     * @return {*}
+     */
+    computeCriticalPath() {
+
+        if (!this.tasks)
+            return false;
+
+        // do not consider grouping tasks
+        var tasks = this.tasks.filter(function (t) {
+            //return !t.isParent()
+            return (t.getRow() > 0) && (!t.isParent() || (t.isParent() && !t.isDependent()));
+        });
+
+        // reset values
+        for (var i = 0; i < tasks.length; i++) {
+            var t = tasks[i];
+            t.earlyStart = -1;
+            t.earlyFinish = -1;
+            t.latestStart = -1;
+            t.latestFinish = -1;
+            t.criticalCost = -1;
+            t.isCritical = false;
+        }
+
+        // tasks whose critical cost has been calculated
+        var completed = [];
+        // tasks whose critical cost needs to be calculated
+        var remaining = tasks.concat(); // put all tasks in remaining
+
+
+        // Backflow algorithm
+        // while there are tasks whose critical cost isn't calculated.
+        while (remaining.length > 0) {
+            var progress = false;
+
+            // find a new task to calculate
+            for (var i = 0; i < remaining.length; i++) {
+                var task = remaining[i];
+                var inferiorTasks = task.getInferiorTasks();
+
+                if (containsAll(completed, inferiorTasks)) {
+                    // all dependencies calculated, critical cost is max dependency critical cost, plus our cost
+                    var critical = 0;
+                    for (var j = 0; j < inferiorTasks.length; j++) {
+                        var t = inferiorTasks[j];
+                        if (t.criticalCost > critical) {
+                            critical = t.criticalCost;
+                        }
+                    }
+                    task.criticalCost = critical + task.duration;
+                    // set task as calculated an remove
+                    completed.push(task);
+                    remaining.splice(i, 1);
+
+                    // note we are making progress
+                    progress = true;
+                }
+            }
+            // If we haven't made any progress then a cycle must exist in
+            // the graph and we wont be able to calculate the critical path
+            if (!progress) {
+                console.error("Cyclic dependency, algorithm stopped!");
+                return false;
+            }
+        }
+
+        // set earlyStart, earlyFinish, latestStart, latestFinish
+        computeMaxCost(tasks);
+        var initialNodes = initials(tasks);
+        calculateEarly(initialNodes);
+        calculateCritical(tasks);
+
+        return tasks;
+
+
+        function containsAll(set, targets) {
+            for (var i = 0; i < targets.length; i++) {
+                if (set.indexOf(targets[i]) < 0)
+                    return false;
+            }
+            return true;
+        }
+
+        function computeMaxCost(tasks) {
+            var max = -1;
+            for (var i = 0; i < tasks.length; i++) {
+                var t = tasks[i];
+
+                if (t.criticalCost > max)
+                    max = t.criticalCost;
+            }
+            //console.debug("Critical path length (cost): " + max);
+            for (var i = 0; i < tasks.length; i++) {
+                var t = tasks[i];
+                t.setLatest(max);
+            }
+        }
+
+        function initials(tasks) {
+            var initials = [];
+            for (var i = 0; i < tasks.length; i++) {
+                if (!tasks[i].depends || tasks[i].depends == "")
+                    initials.push(tasks[i]);
+            }
+            return initials;
+        }
+
+        function calculateEarly(initials) {
+            for (var i = 0; i < initials.length; i++) {
+                var initial = initials[i];
+                initial.earlyStart = 0;
+                initial.earlyFinish = initial.duration;
+                setEarly(initial);
+            }
+        }
+
+        function setEarly(initial) {
+            var completionTime = initial.earlyFinish;
+            var inferiorTasks = initial.getInferiorTasks();
+            for (var i = 0; i < inferiorTasks.length; i++) {
+                var t = inferiorTasks[i];
+                if (completionTime >= t.earlyStart) {
+                    t.earlyStart = completionTime;
+                    t.earlyFinish = completionTime + t.duration;
+                }
+                setEarly(t);
+            }
+        }
+
+        function calculateCritical(tasks) {
+            for (var i = 0; i < tasks.length; i++) {
+                var t = tasks[i];
+                t.isCritical = (t.earlyStart == t.latestStart)
+            }
+        }
+
+    };
+
+    /**
+     * workStartHour,endStartHour : millis from 00:00
+     * dateFormat dd/MM/yyyy HH:mm
+     * working period resolution in millis or days
+     */
+    setHoursOn(startWorkingHour, endWorkingHour, dateFormat, resolution) {
+        //console.debug("resolution",resolution)
+        Date.defaultFormat = dateFormat;
+        Date.startWorkingHour = startWorkingHour;
+        Date.endWorkingHour = endWorkingHour;
+        Date.useMillis = resolution >= 1000;
+        Date.workingPeriodResolution = resolution;
+        millisInWorkingDay = endWorkingHour - startWorkingHour;
+    };
 }
 
 
@@ -605,1117 +1674,4 @@ GanttMaster.messages = {
     "CANNOT_CREATE_SAME_LINK": "CANNOT_CREATE_SAME_LINK"
 };
 
-
-GanttMaster.prototype.createTask = function (id, name, code, level, start, duration) {
-    var factory = new TaskFactory();
-    return factory.build(id, name, code, level, start, duration);
-};
-
-
-GanttMaster.prototype.getOrCreateResource = function (id, name) {
-    var res = this.getResource(id);
-    if (!res && id && name) {
-        res = this.createResource(id, name);
-    }
-    return res
-};
-
-GanttMaster.prototype.createResource = function (id, name) {
-    var res = new Resource(id, name);
-    this.resources.push(res);
-    return res;
-};
-
-
-//update depends strings
-GanttMaster.prototype.updateDependsStrings = function () {
-    //remove all deps
-    for (var i = 0; i < this.tasks.length; i++) {
-        this.tasks[i].depends = "";
-    }
-
-    for (var i = 0; i < this.links.length; i++) {
-        var link = this.links[i];
-        var dep = link.to.depends;
-        link.to.depends = link.to.depends + (link.to.depends == "" ? "" : ",") + (link.from.getRow() + 1) + (link.lag ? ":" + link.lag : "");
-    }
-
-};
-
-GanttMaster.prototype.removeLink = function (fromTask, toTask) {
-    //console.debug("removeLink");
-    if (!this.permissions.canWrite || (!fromTask.canWrite && !toTask.canWrite))
-        return;
-
-    this.beginTransaction();
-    var found = false;
-    for (var i = 0; i < this.links.length; i++) {
-        if (this.links[i].from == fromTask && this.links[i].to == toTask) {
-            this.links.splice(i, 1);
-            found = true;
-            break;
-        }
-    }
-
-    if (found) {
-        this.updateDependsStrings();
-        if (this.updateLinks(toTask))
-            this.changeTaskDates(toTask, toTask.start, toTask.end); // fake change to force date recomputation from dependencies
-    }
-    this.endTransaction();
-};
-
-GanttMaster.prototype.__removeAllLinks = function (task, openTrans) {
-
-    if (openTrans)
-        this.beginTransaction();
-    var found = false;
-    for (var i = 0; i < this.links.length; i++) {
-        if (this.links[i].from == task || this.links[i].to == task) {
-            this.links.splice(i, 1);
-            found = true;
-        }
-    }
-
-    if (found) {
-        this.updateDependsStrings();
-    }
-    if (openTrans)
-        this.endTransaction();
-};
-
-//------------------------------------  ADD TASK --------------------------------------------
-
-
-/**
- * a project contais tasks, resources, roles, and info about permisions
- * @param project
- */
-
-
-
-GanttMaster.prototype.getTask = function (taskId) {
-    var ret;
-    for (var i = 0; i < this.tasks.length; i++) {
-        var tsk = this.tasks[i];
-        if (tsk.id == taskId) {
-            ret = tsk;
-            break;
-        }
-    }
-    return ret;
-};
-
-
-GanttMaster.prototype.getResource = function (resId) {
-    var ret;
-    for (var i = 0; i < this.resources.length; i++) {
-        var res = this.resources[i];
-        if (res.id == resId) {
-            ret = res;
-            break;
-        }
-    }
-    return ret;
-};
-
-
-GanttMaster.prototype.changeTaskDeps = function (task) {
-    return task.moveTo(task.start, false, true);
-};
-
-GanttMaster.prototype.changeTaskDates = function (task, start, end) {
-    //console.debug("changeTaskDates",task, start, end)
-    return task.setPeriod(start, end);
-};
-
-
-GanttMaster.prototype.moveTask = function (task, newStart) {
-    return task.moveTo(newStart, true, true);
-};
-
-
-GanttMaster.prototype.taskIsChanged = function () {
-    //console.debug("taskIsChanged");
-    var master = this;
-
-    //refresh is executed only once every 50ms
-    this.element.stopTime("gnnttaskIsChanged");
-    //var profilerext = new Profiler("gm_taskIsChangedRequest");
-    this.element.oneTime(50, "gnnttaskIsChanged", function () {
-        //console.debug("task Is Changed real call to redraw");
-        //var profiler = new Profiler("gm_taskIsChangedReal");
-        master.redraw();
-        master.element.trigger("ganttalendar.redrawCompleted");
-        //profiler.stop();
-    });
-    //profilerext.stop();
-};
-
-
-GanttMaster.prototype.checkButtonPermissions = function () {
-    var ganttButtons = $(".ganttButtonBar");
-    //hide buttons basing on permissions
-    if (!this.permissions.canWrite)
-        ganttButtons.find(".requireCanWrite").hide();
-
-    if (!this.permissions.canAdd)
-        ganttButtons.find(".requireCanAdd").hide();
-
-    if (!this.permissions.canInOutdent)
-        ganttButtons.find(".requireCanInOutdent").hide();
-
-    if (!this.permissions.canMoveUpDown)
-        ganttButtons.find(".requireCanMoveUpDown").hide();
-
-    if (!this.permissions.canDelete)
-        ganttButtons.find(".requireCanDelete").hide();
-
-    if (!this.permissions.canSeeCriticalPath)
-        ganttButtons.find(".requireCanSeeCriticalPath").hide();
-
-    if (!this.permissions.canAddIssue)
-        ganttButtons.find(".requireCanAddIssue").hide();
-
-};
-
-
-GanttMaster.prototype.redraw = function () {
-    this.editor.redraw();
-    this.ganttalendar.redraw();
-};
-
-
-GanttMaster.prototype.showTaskEditor = function (taskId) {
-    var task = this.getTask(taskId);
-    task.rowElement.find(".edit").click();
-};
-
-GanttMaster.prototype.saveProject = function () {
-    return this.saveGantt(false);
-};
-
-GanttMaster.prototype.saveGantt = function (forTransaction) {
-    //var prof = new Profiler("gm_saveGantt");
-    var saved = [];
-    for (var i = 0; i < this.tasks.length; i++) {
-        var task = this.tasks[i];
-        var cloned = task.clone();
-
-        //shift back to server side timezone
-        if (!forTransaction) {
-            cloned.start -= this.serverClientTimeOffset;
-            cloned.end -= this.serverClientTimeOffset;
-        }
-
-        saved.push(cloned);
-    }
-
-    var ret = {tasks: saved};
-    if (this.currentTask) {
-        ret.selectedRow = this.currentTask.getRow();
-    }
-
-    ret.deletedTaskIds = this.deletedTaskIds;  //this must be consistent with transactions and undo
-
-    if (!forTransaction) {
-        ret.resources = this.resources;
-        ret.roles = this.roles;
-        ret.canWrite = this.permissions.canWrite;
-        ret.canWriteOnParent = this.permissions.canWriteOnParent;
-        ret.zoom = this.ganttalendar.zoom;
-
-        //save collapsed tasks on localStorage
-        this.storeCollapsedTasks();
-
-        //mark un-changed task and assignments
-        this.markUnChangedTasksAndAssignments(ret);
-
-        //si aggiunge il commento al cambiamento di date/status
-        ret.changesReasonWhy = $("#LOG_CHANGES").val();
-
-    }
-
-    //prof.stop();
-    return ret;
-};
-
-
-GanttMaster.prototype.markUnChangedTasksAndAssignments = function (newProject) {
-    //console.debug("markUnChangedTasksAndAssignments");
-    //si controlla che ci sia qualcosa di cambiato, ovvero che ci sia l'undo stack
-    if (this.__undoStack.length > 0) {
-        var oldProject = JSON.parse(ge.__undoStack[0]);
-        //si looppano i "nuovi" task
-        for (var i = 0; i < newProject.tasks.length; i++) {
-            var newTask = newProject.tasks[i];
-            //se è un task che c'erà già
-            if (typeof (newTask.id) == "string" && !newTask.id.startsWith("tmp_")) {
-                //si recupera il vecchio task
-                var oldTask;
-                for (var j = 0; j < oldProject.tasks.length; j++) {
-                    if (oldProject.tasks[j].id == newTask.id) {
-                        oldTask = oldProject.tasks[j];
-                        break;
-                    }
-                }
-
-                //si controlla se ci sono stati cambiamenti
-                var taskChanged =
-                    oldTask.id != newTask.id ||
-                    oldTask.code != newTask.code ||
-                    oldTask.name != newTask.name ||
-                    oldTask.start != newTask.start ||
-                    oldTask.startIsMilestone != newTask.startIsMilestone ||
-                    oldTask.end != newTask.end ||
-                    oldTask.endIsMilestone != newTask.endIsMilestone ||
-                    oldTask.duration != newTask.duration ||
-                    oldTask.status != newTask.status ||
-                    oldTask.typeId != newTask.typeId ||
-                    oldTask.relevance != newTask.relevance ||
-                    oldTask.progress != newTask.progress ||
-                    oldTask.progressByWorklog != newTask.progressByWorklog ||
-                    oldTask.description != newTask.description ||
-                    oldTask.level != newTask.level ||
-                    oldTask.depends != newTask.depends;
-
-                newTask.unchanged = !taskChanged;
-
-
-                //se ci sono assegnazioni
-                if (newTask.assigs && newTask.assigs.length > 0) {
-
-                    //se abbiamo trovato il vecchio task e questo aveva delle assegnazioni
-                    if (oldTask && oldTask.assigs && oldTask.assigs.length > 0) {
-                        for (var j = 0; j < oldTask.assigs.length; j++) {
-                            var oldAssig = oldTask.assigs[j];
-                            //si cerca la nuova assegnazione corrispondente
-                            var newAssig;
-                            for (var k = 0; k < newTask.assigs.length; k++) {
-                                if (oldAssig.id == newTask.assigs[k].id) {
-                                    newAssig = newTask.assigs[k];
-                                    break;
-                                }
-                            }
-
-                            //se c'è una nuova assig corrispondente
-                            if (newAssig) {
-                                //si confrontano i valori per vedere se è cambiata
-                                newAssig.unchanged =
-                                    newAssig.resourceId == oldAssig.resourceId &&
-                                    newAssig.roleId == oldAssig.roleId &&
-                                    newAssig.effort == oldAssig.effort;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
-
-GanttMaster.prototype.loadCollapsedTasks = function () {
-    var collTasks = [];
-    if (localStorage) {
-        if (localStorage.getItem("TWPGanttCollTasks"))
-            collTasks = localStorage.getItem("TWPGanttCollTasks");
-        return collTasks;
-    }
-};
-
-
-
-
-GanttMaster.prototype.updateLinks = function (task) {
-    //console.debug("updateLinks",task);
-    //var prof= new Profiler("gm_updateLinks");
-
-    // defines isLoop function
-    function isLoop(task, target, visited) {
-        //var prof= new Profiler("gm_isLoop");
-        //console.debug("isLoop :"+task.name+" - "+target.name);
-        if (target == task) {
-            return true;
-        }
-
-        var sups = task.getSuperiors();
-
-        //my parent' superiors are my superiors too
-        var p = task.getParent();
-        while (p) {
-            sups = sups.concat(p.getSuperiors());
-            p = p.getParent();
-        }
-
-        //my children superiors are my superiors too
-        var chs = task.getChildren();
-        for (var i = 0; i < chs.length; i++) {
-            sups = sups.concat(chs[i].getSuperiors());
-        }
-
-        var loop = false;
-        //check superiors
-        for (var i = 0; i < sups.length; i++) {
-            var supLink = sups[i];
-            if (supLink.from == target) {
-                loop = true;
-                break;
-            } else {
-                if (visited.indexOf(supLink.from.id + "x" + target.id) <= 0) {
-                    visited.push(supLink.from.id + "x" + target.id);
-                    if (isLoop(supLink.from, target, visited)) {
-                        loop = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        //check target parent
-        var tpar = target.getParent();
-        if (tpar) {
-            if (visited.indexOf(task.id + "x" + tpar.id) <= 0) {
-                visited.push(task.id + "x" + tpar.id);
-                if (isLoop(task, tpar, visited)) {
-                    loop = true;
-                }
-            }
-        }
-
-        //prof.stop();
-        return loop;
-    }
-
-    //remove my depends
-    this.links = this.links.filter(function (link) {
-        return link.to != task;
-    });
-
-    var todoOk = true;
-    if (task.depends) {
-
-        //cannot depend from an ancestor
-        var parents = task.getParents();
-        //cannot depend from descendants
-        var descendants = task.getDescendant();
-
-        var deps = task.depends.split(",");
-        var newDepsString = "";
-
-        var visited = [];
-        var depsEqualCheck = [];
-        for (var j = 0; j < deps.length; j++) {
-            var depString = deps[j]; // in the form of row(lag) e.g. 2:3,3:4,5
-            var supStr = depString;
-            var lag = 0;
-            var pos = depString.indexOf(":");
-            if (pos > 0) {
-                supStr = depString.substr(0, pos);
-                var lagStr = depString.substr(pos + 1);
-                lag = Math.ceil((stringToDuration(lagStr)) / Date.workingPeriodResolution) * Date.workingPeriodResolution;
-            }
-
-            var sup = this.tasks[parseInt(supStr) - 1];
-
-            if (sup) {
-                if (parents && parents.indexOf(sup) >= 0) {
-                    this.setErrorOnTransaction("\"" + task.name + "\"\n" + GanttMaster.messages.CANNOT_DEPENDS_ON_ANCESTORS + "\n\"" + sup.name + "\"");
-                    todoOk = false;
-
-                } else if (descendants && descendants.indexOf(sup) >= 0) {
-                    this.setErrorOnTransaction("\"" + task.name + "\"\n" + GanttMaster.messages.CANNOT_DEPENDS_ON_DESCENDANTS + "\n\"" + sup.name + "\"");
-                    todoOk = false;
-
-                } else if (isLoop(sup, task, visited)) {
-                    todoOk = false;
-                    this.setErrorOnTransaction(GanttMaster.messages.CIRCULAR_REFERENCE + "\n\"" + task.id + " - " + task.name + "\" -> \"" + sup.id + " - " + sup.name + "\"");
-
-                } else if (depsEqualCheck.indexOf(sup) >= 0) {
-                    this.setErrorOnTransaction(GanttMaster.messages.CANNOT_CREATE_SAME_LINK + "\n\"" + sup.name + "\" -> \"" + task.name + "\"");
-                    todoOk = false;
-
-                } else {
-                    this.links.push(new Link(sup, task, lag));
-                    newDepsString = newDepsString + (newDepsString.length > 0 ? "," : "") + supStr + (lag == 0 ? "" : ":" + durationToString(lag));
-                }
-
-                if (todoOk)
-                    depsEqualCheck.push(sup);
-            }
-        }
-        task.depends = newDepsString;
-    }
-    //prof.stop();
-
-    return todoOk;
-};
-
-
-GanttMaster.prototype.moveUpCurrentTask = function () {
-    var self = this;
-    //console.debug("moveUpCurrentTask",self.currentTask)
-    if (self.currentTask) {
-        if (!(self.permissions.canWrite || self.currentTask.canWrite) || !self.permissions.canMoveUpDown)
-            return;
-
-        self.beginTransaction();
-        self.currentTask.moveUp();
-        self.endTransaction();
-    }
-};
-
-GanttMaster.prototype.moveDownCurrentTask = function () {
-    var self = this;
-    //console.debug("moveDownCurrentTask",self.currentTask)
-    if (self.currentTask) {
-        if (!(self.permissions.canWrite || self.currentTask.canWrite) || !self.permissions.canMoveUpDown)
-            return;
-
-        self.beginTransaction();
-        self.currentTask.moveDown();
-        self.endTransaction();
-    }
-};
-
-GanttMaster.prototype.outdentCurrentTask = function () {
-    var self = this;
-    if (self.currentTask) {
-        var par = self.currentTask.getParent();
-        //can outdent if you have canRight on current task and on its parent and canAdd on grandfather
-        if (!self.currentTask.canWrite || !par.canWrite || !par.getParent() || !par.getParent().canAdd)
-            return;
-
-        self.beginTransaction();
-        self.currentTask.outdent();
-        self.endTransaction();
-
-        //[expand]
-        if (par) self.editor.refreshExpandStatus(par);
-    }
-};
-
-GanttMaster.prototype.indentCurrentTask = function () {
-    var self = this;
-    if (self.currentTask) {
-
-        //can indent if you have canRight on current and canAdd on the row above
-        var row = self.currentTask.getRow();
-        if (!self.currentTask.canWrite || row <= 0 || !self.tasks[row - 1].canAdd)
-            return;
-
-        self.beginTransaction();
-        self.currentTask.indent();
-        self.endTransaction();
-    }
-};
-
-GanttMaster.prototype.addBelowCurrentTask = function () {
-    var self = this;
-    //console.debug("addBelowCurrentTask",self.currentTask)
-    var factory = new TaskFactory();
-    var ch;
-    var row = 0;
-    if (self.currentTask && self.currentTask.name) {
-        //add below add a brother if current task is not already a parent
-        var addNewBrother = !(self.currentTask.isParent() || self.currentTask.level == 0);
-
-        var canAddChild = self.currentTask.canAdd;
-        var canAddBrother = self.currentTask.getParent() && self.currentTask.getParent().canAdd;
-
-        //if you cannot add a brother you will try to add a child
-        addNewBrother = addNewBrother && canAddBrother;
-
-        if (!canAddBrother && !canAddChild)
-            return;
-
-
-        ch = factory.build("tmp_" + new Date().getTime(), "", "", self.currentTask.level + (addNewBrother ? 0 : 1), self.currentTask.start, 1);
-        row = self.currentTask.getRow() + 1;
-
-        if (row > 0) {
-            self.beginTransaction();
-            var task = self.addTask(ch, row);
-            if (task) {
-                task.rowElement.click();
-                task.rowElement.find("[name=name]").focus();
-            }
-            self.endTransaction();
-        }
-    }
-};
-
-GanttMaster.prototype.addAboveCurrentTask = function () {
-    var self = this;
-    // console.debug("addAboveCurrentTask",self.currentTask)
-
-    //check permissions
-    if ((self.currentTask.getParent() && !self.currentTask.getParent().canAdd))
-        return;
-
-    var factory = new TaskFactory();
-
-    var ch;
-    var row = 0;
-    if (self.currentTask && self.currentTask.name) {
-        //cannot add brothers to root
-        if (self.currentTask.level <= 0)
-            return;
-
-        ch = factory.build("tmp_" + new Date().getTime(), "", "", self.currentTask.level, self.currentTask.start, 1);
-        row = self.currentTask.getRow();
-
-        if (row > 0) {
-            self.beginTransaction();
-            var task = self.addTask(ch, row);
-            if (task) {
-                task.rowElement.click();
-                task.rowElement.find("[name=name]").focus();
-            }
-            self.endTransaction();
-        }
-    }
-};
-
-GanttMaster.prototype.deleteCurrentTask = function (taskId) {
-    //console.debug("deleteCurrentTask",this.currentTask , this.isMultiRoot)
-    var self = this;
-
-    var task;
-    if (taskId)
-        task = self.getTask(taskId);
-    else
-        task = self.currentTask;
-
-    if (!task || !self.permissions.canDelete && !task.canDelete)
-        return;
-
-    var taskIsEmpty = task.name == "";
-
-    var row = task.getRow();
-    if (task && (row > 0 || self.isMultiRoot || task.isNew())) {
-        var par = task.getParent();
-        self.beginTransaction();
-        task.deleteTask();
-        task = undefined;
-
-        //recompute depends string
-        self.updateDependsStrings();
-
-        //redraw
-        self.taskIsChanged();
-
-        //[expand]
-        if (par)
-            self.editor.refreshExpandStatus(par);
-
-
-        //focus next row
-        row = row > self.tasks.length - 1 ? self.tasks.length - 1 : row;
-        if (!taskIsEmpty && row >= 0) {
-            task = self.tasks[row];
-            task.rowElement.click();
-            task.rowElement.find("[name=name]").focus();
-        }
-        self.endTransaction();
-    }
-};
-
-
-GanttMaster.prototype.collapseAll = function () {
-    //console.debug("collapseAll");
-    if (this.currentTask) {
-        this.currentTask.collapsed = true;
-        var desc = this.currentTask.getDescendant();
-        for (var i = 0; i < desc.length; i++) {
-            if (desc[i].isParent()) // set collapsed only if is a parent
-                desc[i].collapsed = true;
-            desc[i].rowElement.hide();
-        }
-
-        this.redraw();
-
-        //store collapse statuses
-        this.storeCollapsedTasks();
-    }
-};
-
-GanttMaster.prototype.fullScreen = function () {
-    //console.debug("fullScreen");
-    this.workSpace.toggleClass("ganttFullScreen").resize();
-    $("#fullscrbtn .teamworkIcon").html(this.workSpace.is(".ganttFullScreen") ? "€" : "@");
-};
-
-
-GanttMaster.prototype.expandAll = function () {
-    //console.debug("expandAll");
-    if (this.currentTask) {
-        this.currentTask.collapsed = false;
-        var desc = this.currentTask.getDescendant();
-        for (var i = 0; i < desc.length; i++) {
-            desc[i].collapsed = false;
-            desc[i].rowElement.show();
-        }
-
-        this.redraw();
-
-        //store collapse statuses
-        this.storeCollapsedTasks();
-
-    }
-};
-
-
-GanttMaster.prototype.collapse = function (task, all) {
-    //console.debug("collapse",task)
-    task.collapsed = true;
-    task.rowElement.addClass("collapsed");
-
-    var descs = task.getDescendant();
-    for (var i = 0; i < descs.length; i++)
-        descs[i].rowElement.hide();
-
-    this.redraw();
-
-    //store collapse statuses
-    this.storeCollapsedTasks();
-};
-
-
-GanttMaster.prototype.getCollapsedDescendant = function () {
-    var allTasks = this.tasks;
-    var collapsedDescendant = [];
-    for (var i = 0; i < allTasks.length; i++) {
-        var task = allTasks[i];
-        if (collapsedDescendant.indexOf(task) >= 0) continue;
-        if (task.collapsed) collapsedDescendant = collapsedDescendant.concat(task.getDescendant());
-    }
-    return collapsedDescendant;
-}
-
-
-GanttMaster.prototype.addIssue = function () {
-    var self = this;
-
-    if (self.currentTask && self.currentTask.isNew()) {
-        alert(GanttMaster.messages.PLEASE_SAVE_PROJECT);
-        return;
-    }
-    if (!self.currentTask || !self.currentTask.canAddIssue)
-        return;
-
-    // openIssueEditorInBlack('0',"AD","ISSUE_TASK="+self.currentTask.id);
-};
-
-GanttMaster.prototype.openExternalEditor = function () {
-    //console.debug("openExternalEditor ")
-    var self = this;
-    if (!self.currentTask)
-        return;
-
-    if (self.currentTask.isNew()) {
-        alert(GanttMaster.messages.PLEASE_SAVE_PROJECT);
-        return;
-    }
-
-    //window.location.href=contextPath+"/applications/teamwork/task/taskEditor.jsp?CM=ED&OBJID="+self.currentTask.id;
-};
-
-//<%----------------------------- TRANSACTION MANAGEMENT ---------------------------------%>
-GanttMaster.prototype.beginTransaction = function () {
-    if (!this.__currentTransaction) {
-        this.__currentTransaction = {
-            snapshot: JSON.stringify(this.saveGantt(true)),
-            errors: []
-        };
-    } else {
-        console.error("Cannot open twice a transaction");
-    }
-    return this.__currentTransaction;
-};
-
-
-//this function notify an error to a transaction -> transaction will rollback
-GanttMaster.prototype.setErrorOnTransaction = function (errorMessage, task) {
-    if (this.__currentTransaction) {
-        this.__currentTransaction.errors.push({msg: errorMessage, task: task});
-    } else {
-        console.error(errorMessage);
-    }
-};
-
-GanttMaster.prototype.isTransactionInError = function () {
-    if (!this.__currentTransaction) {
-        console.error("Transaction never started.");
-        return true;
-    } else {
-        return this.__currentTransaction.errors.length > 0
-    }
-
-};
-
-GanttMaster.prototype.endTransaction = function () {
-    if (!this.__currentTransaction) {
-        console.error("Transaction never started.");
-        return true;
-    }
-
-    var ret = true;
-
-    //no error -> commit
-    if (this.__currentTransaction.errors.length <= 0) {
-        //console.debug("committing transaction");
-
-        //put snapshot in undo
-        this.__undoStack.push(this.__currentTransaction.snapshot);
-        //clear redo stack
-        this.__redoStack = [];
-
-        //shrink ganttalendar bundaries
-        this.ganttalendar.shrinkBoundaries();
-        this.taskIsChanged(); //enqueue for ganttalendar refresh
-
-
-        //error -> rollback
-    } else {
-        ret = false;
-        //console.debug("rolling-back transaction");
-
-        //compose error message
-        var msg = "ERROR:\n";
-        for (var i = 0; i < this.__currentTransaction.errors.length; i++) {
-            var err = this.__currentTransaction.errors[i];
-            msg = msg + err.msg + "\n\n";
-        }
-        alert(msg);
-
-
-        //try to restore changed tasks
-        var oldTasks = JSON.parse(this.__currentTransaction.snapshot);
-        this.deletedTaskIds = oldTasks.deletedTaskIds;
-        this.__inUndoRedo = true; // avoid Undo/Redo stacks reset
-        this.loadTasks(oldTasks.tasks, oldTasks.selectedRow);
-        this.redraw();
-
-    }
-    //reset transaction
-    this.__currentTransaction = undefined;
-
-    //show/hide save button
-    this.saveRequired();
-
-    //[expand]
-    this.editor.refreshExpandStatus(this.currentTask);
-
-    return ret;
-};
-
-// inhibit undo-redo
-GanttMaster.prototype.checkpoint = function () {
-    //console.debug("GanttMaster.prototype.checkpoint");
-    this.__undoStack = [];
-    this.__redoStack = [];
-    this.saveRequired();
-};
-
-//----------------------------- UNDO/REDO MANAGEMENT ---------------------------------%>
-
-GanttMaster.prototype.undo = function () {
-    //console.debug("undo before:",this.__undoStack,this.__redoStack);
-    if (this.__undoStack.length > 0) {
-        var his = this.__undoStack.pop();
-        this.__redoStack.push(JSON.stringify(this.saveGantt()));
-        var oldTasks = JSON.parse(his);
-        this.deletedTaskIds = oldTasks.deletedTaskIds;
-        this.__inUndoRedo = true; // avoid Undo/Redo stacks reset
-        this.loadTasks(oldTasks.tasks, oldTasks.selectedRow);
-        this.redraw();
-        //show/hide save button
-        this.saveRequired();
-    }
-};
-
-GanttMaster.prototype.redo = function () {
-    //console.debug("redo before:",undoStack,redoStack);
-    if (this.__redoStack.length > 0) {
-        var his = this.__redoStack.pop();
-        this.__undoStack.push(JSON.stringify(this.saveGantt()));
-        var oldTasks = JSON.parse(his);
-        this.deletedTaskIds = oldTasks.deletedTaskIds;
-        this.__inUndoRedo = true; // avoid Undo/Redo stacks reset
-        this.loadTasks(oldTasks.tasks, oldTasks.selectedRow);
-        this.redraw();
-        //console.debug("redo after:",undoStack,redoStack);
-
-        this.saveRequired();
-    }
-};
-
-
-GanttMaster.prototype.saveRequired = function () {
-    //console.debug("saveRequired")
-    //show/hide save button
-    if (this.__undoStack.length > 0) {
-        $("#saveGanttButton").removeClass("disabled");
-        $("form[alertOnChange] #Gantt").val(new Date().getTime()); // set a fake variable as dirty
-        this.element.trigger("saveRequired.ganttalendar", [true]);
-
-
-    } else {
-        $("#saveGanttButton").addClass("disabled");
-        $("form[alertOnChange] #Gantt").updateOldValue(); // set a fake variable as clean
-        this.element.trigger("saveRequired.ganttalendar", [false]);
-
-    }
-};
-
-
-GanttMaster.prototype.print = function () {
-    this.ganttalendar.redrawTasks(true);
-    //print();
-};
-
-
-GanttMaster.prototype.resize = function () {
-    var self = this;
-    //console.debug("GanttMaster.resize")
-    this.element.stopTime("resizeRedraw").oneTime(50, "resizeRedraw", function () {
-        self.splitter.resize();
-        self.numOfVisibleRows = Math.ceil(self.element.height() / self.rowHeight);
-        self.firstScreenLine = Math.floor(self.splitter.firstBox.scrollTop() / self.rowHeight);
-        self.ganttalendar.redrawTasks();
-    });
-};
-
-
-GanttMaster.prototype.scrolled = function (oldFirstRow) {
-    var self = this;
-    var newFirstRow = self.firstScreenLine;
-
-    //if scroll something
-    if (newFirstRow != oldFirstRow) {
-        //console.debug("Ganttalendar.scrolled oldFirstRow:"+oldFirstRow+" new firstScreenLine:"+newFirstRow);
-
-        var collapsedDescendant = self.getCollapsedDescendant();
-
-        var scrollDown = newFirstRow > oldFirstRow;
-        var startRowDel;
-        var endRowDel;
-        var startRowAdd;
-        var endRowAdd;
-
-        if (scrollDown) {
-            startRowDel = oldFirstRow - self.rowBufferSize;
-            endRowDel = newFirstRow - self.rowBufferSize;
-            startRowAdd = Math.max(oldFirstRow + self.numOfVisibleRows + self.rowBufferSize, endRowDel);
-            endRowAdd = newFirstRow + self.numOfVisibleRows + self.rowBufferSize;
-        } else {
-            startRowDel = newFirstRow + self.numOfVisibleRows + self.rowBufferSize;
-            endRowDel = oldFirstRow + self.numOfVisibleRows + self.rowBufferSize;
-            startRowAdd = newFirstRow - self.rowBufferSize;
-            endRowAdd = Math.min(oldFirstRow - self.rowBufferSize, startRowDel);
-        }
-
-        var firstVisibleRow = newFirstRow - self.rowBufferSize; //ignoring collapsed tasks
-        var lastVisibleRow = newFirstRow + self.numOfVisibleRows + self.rowBufferSize;
-
-
-        //console.debug("remove startRowDel:"+startRowDel+" endRowDel:"+endRowDel )
-        //console.debug("add startRowAdd:"+startRowAdd+" endRowAdd:"+endRowAdd)
-
-        var row = 0;
-        self.firstVisibleTaskIndex = -1;
-        for (var i = 0; i < self.tasks.length; i++) {
-            var task = self.tasks[i];
-            if (collapsedDescendant.indexOf(task) >= 0) {
-                continue;
-            }
-
-            //remove rows on top
-            if (row >= startRowDel && row < endRowDel) {
-                if (task.ganttElement)
-                    task.ganttElement.remove();
-                if (task.ganttBaselineElement)
-                    task.ganttBaselineElement.remove();
-
-                //add missing ones
-            } else if (row >= startRowAdd && row < endRowAdd) {
-                self.ganttalendar.drawTask(task);
-            }
-
-            if (row >= firstVisibleRow && row < lastVisibleRow) {
-                self.firstVisibleTaskIndex = self.firstVisibleTaskIndex == -1 ? i : self.firstVisibleTaskIndex;
-                self.lastVisibleTaskIndex = i;
-            }
-
-            row++
-        }
-    }
-};
-
-
-/**
- * Compute the critical path using Backflow algorithm.
- * Translated from Java code supplied by M. Jessup here http://stackoverflow.com/questions/2985317/critical-path-method-algorithm
- *
- * For each task computes:
- * earlyStart, earlyFinish, latestStart, latestFinish, criticalCost
- *
- * A task on the critical path has isCritical=true
- * A task not in critical path can float by latestStart-earlyStart days
- *
- * If you use critical path avoid usage of dependencies between different levels of tasks
- *
- * WARNNG: It ignore milestones!!!!
- * @return {*}
- */
-GanttMaster.prototype.computeCriticalPath = function () {
-
-    if (!this.tasks)
-        return false;
-
-    // do not consider grouping tasks
-    var tasks = this.tasks.filter(function (t) {
-        //return !t.isParent()
-        return (t.getRow() > 0) && (!t.isParent() || (t.isParent() && !t.isDependent()));
-    });
-
-    // reset values
-    for (var i = 0; i < tasks.length; i++) {
-        var t = tasks[i];
-        t.earlyStart = -1;
-        t.earlyFinish = -1;
-        t.latestStart = -1;
-        t.latestFinish = -1;
-        t.criticalCost = -1;
-        t.isCritical = false;
-    }
-
-    // tasks whose critical cost has been calculated
-    var completed = [];
-    // tasks whose critical cost needs to be calculated
-    var remaining = tasks.concat(); // put all tasks in remaining
-
-
-    // Backflow algorithm
-    // while there are tasks whose critical cost isn't calculated.
-    while (remaining.length > 0) {
-        var progress = false;
-
-        // find a new task to calculate
-        for (var i = 0; i < remaining.length; i++) {
-            var task = remaining[i];
-            var inferiorTasks = task.getInferiorTasks();
-
-            if (containsAll(completed, inferiorTasks)) {
-                // all dependencies calculated, critical cost is max dependency critical cost, plus our cost
-                var critical = 0;
-                for (var j = 0; j < inferiorTasks.length; j++) {
-                    var t = inferiorTasks[j];
-                    if (t.criticalCost > critical) {
-                        critical = t.criticalCost;
-                    }
-                }
-                task.criticalCost = critical + task.duration;
-                // set task as calculated an remove
-                completed.push(task);
-                remaining.splice(i, 1);
-
-                // note we are making progress
-                progress = true;
-            }
-        }
-        // If we haven't made any progress then a cycle must exist in
-        // the graph and we wont be able to calculate the critical path
-        if (!progress) {
-            console.error("Cyclic dependency, algorithm stopped!");
-            return false;
-        }
-    }
-
-    // set earlyStart, earlyFinish, latestStart, latestFinish
-    computeMaxCost(tasks);
-    var initialNodes = initials(tasks);
-    calculateEarly(initialNodes);
-    calculateCritical(tasks);
-
-    return tasks;
-
-
-    function containsAll(set, targets) {
-        for (var i = 0; i < targets.length; i++) {
-            if (set.indexOf(targets[i]) < 0)
-                return false;
-        }
-        return true;
-    }
-
-    function computeMaxCost(tasks) {
-        var max = -1;
-        for (var i = 0; i < tasks.length; i++) {
-            var t = tasks[i];
-
-            if (t.criticalCost > max)
-                max = t.criticalCost;
-        }
-        //console.debug("Critical path length (cost): " + max);
-        for (var i = 0; i < tasks.length; i++) {
-            var t = tasks[i];
-            t.setLatest(max);
-        }
-    }
-
-    function initials(tasks) {
-        var initials = [];
-        for (var i = 0; i < tasks.length; i++) {
-            if (!tasks[i].depends || tasks[i].depends == "")
-                initials.push(tasks[i]);
-        }
-        return initials;
-    }
-
-    function calculateEarly(initials) {
-        for (var i = 0; i < initials.length; i++) {
-            var initial = initials[i];
-            initial.earlyStart = 0;
-            initial.earlyFinish = initial.duration;
-            setEarly(initial);
-        }
-    }
-
-    function setEarly(initial) {
-        var completionTime = initial.earlyFinish;
-        var inferiorTasks = initial.getInferiorTasks();
-        for (var i = 0; i < inferiorTasks.length; i++) {
-            var t = inferiorTasks[i];
-            if (completionTime >= t.earlyStart) {
-                t.earlyStart = completionTime;
-                t.earlyFinish = completionTime + t.duration;
-            }
-            setEarly(t);
-        }
-    }
-
-    function calculateCritical(tasks) {
-        for (var i = 0; i < tasks.length; i++) {
-            var t = tasks[i];
-            t.isCritical = (t.earlyStart == t.latestStart)
-        }
-    }
-
-};
-
-/**
- * workStartHour,endStartHour : millis from 00:00
- * dateFormat dd/MM/yyyy HH:mm
- * working period resolution in millis or days
- */
-GanttMaster.prototype.setHoursOn = function (startWorkingHour, endWorkingHour, dateFormat, resolution) {
-    //console.debug("resolution",resolution)
-    Date.defaultFormat = dateFormat;
-    Date.startWorkingHour = startWorkingHour;
-    Date.endWorkingHour = endWorkingHour;
-    Date.useMillis = resolution >= 1000;
-    Date.workingPeriodResolution = resolution;
-    millisInWorkingDay = endWorkingHour - startWorkingHour;
-};
 
