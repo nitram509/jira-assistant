@@ -23,8 +23,8 @@
 
 import { gridify } from './ganttUtilities'
 import { GanttMaster } from './ganttMaster'
+import $ from "jquery"
 
-var $ = require('jquery');
 var TaskFactory = require('./ganttTask').TaskFactory;
 var durationToString = require('./ganttUtilities').durationToString;
 var millisFromString = require('./ganttUtilities').millisFromString;

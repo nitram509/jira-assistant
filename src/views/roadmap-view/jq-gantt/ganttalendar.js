@@ -1,8 +1,7 @@
 import { GanttMaster } from "./ganttMaster";
+import $ from "jquery"
 
 var isHoliday = require('./libs/date').isHoliday;
-var $ = require('jquery');
-
 var getDurationInUnits = require('./ganttUtilities').getDurationInUnits;
 var computeEndDate = require('./ganttUtilities').computeEndDate;
 var computeStartDate = require('./ganttUtilities').computeStartDate;
@@ -57,7 +56,7 @@ export class Ganttalendar {
         if (this.ganttMaster.currentTask ){
             // take care of collapsed rows
             var ganttHighLighterPosition=this.ganttMaster.editor.element.find(".taskEditRow:visible").index(this.ganttMaster.currentTask.rowElement);
-            this.ganttMaster.gantt.element.find(".ganttLinesSVG").removeClass("rowSelected").eq(ganttHighLighterPosition).addClass("rowSelected");
+            this.ganttMaster.ganttalendar.element.find(".ganttLinesSVG").removeClass("rowSelected").eq(ganttHighLighterPosition).addClass("rowSelected");
         } else {
             $(".rowSelected").removeClass("rowSelected"); // todo non c'era
         }

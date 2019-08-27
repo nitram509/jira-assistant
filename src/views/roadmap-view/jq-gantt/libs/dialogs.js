@@ -20,7 +20,7 @@
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var $ = require('jquery');
+import $ from "jquery"
 var alertOnUnload = require('./forms').alertOnUnload;
 
 var confirm = undefined; // bad hack to make the compiler happy
@@ -135,7 +135,7 @@ function submitInBlack(formId, actionHref, w, h) {
 
 
 var __popups = [];
-function createModalPopup(width, height, onCloseCallBack, cssClass, element, popupOpener) {
+export function createModalPopup(width, height, onCloseCallBack, cssClass, element, popupOpener) {
   //console.debug("createModalPopup");
 
 
@@ -374,7 +374,7 @@ function getBlackPopupOpener(){
   return getBlackPopup().data("__opener")
 }
 
-function closeBlackPopup(callBackdata) {
+export function closeBlackPopup(callBackdata) {
 	//console.debug("closeBlackPopup ",callBackdata);
 	var bp = getBlackPopup();
 
@@ -449,6 +449,3 @@ function selUnselAll(el){
 
 	refreshBulk(el);
 }
-
-exports.closeBlackPopup = closeBlackPopup;
-exports.createModalPopup = createModalPopup;

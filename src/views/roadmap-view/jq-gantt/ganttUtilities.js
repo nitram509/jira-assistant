@@ -22,8 +22,8 @@
  */
 
 import { showBaselineInfo } from "./gantt";
+import $ from "jquery"
 
-var $ = require('jquery');
 var isHoliday = require('./libs/date').isHoliday;
 var millisFromString = require('./libs/date').millisFromString;
 var daysFromString = require('./libs/date').daysFromString;

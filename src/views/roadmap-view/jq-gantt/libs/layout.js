@@ -20,7 +20,7 @@
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var $ = require('jquery');
+import $ from "jquery"
 var jQuery = $;
 
 //----------------------------------positioning-----------------------------------------------
@@ -35,7 +35,7 @@ jQuery.fn.centerOnScreen = function () {
 };
 
 
-function nearBestPosition(whereId, theObjId, centerOnEl) {
+export function nearBestPosition(whereId, theObjId, centerOnEl) {
 
 	var el = whereId;
 	var target = theObjId;
@@ -227,5 +227,3 @@ $.buttonBar = {
     $.buttonBar.manageButtonBar(false);
   }
 };
-
-exports.nearBestPosition = nearBestPosition;

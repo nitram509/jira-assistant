@@ -1,7 +1,6 @@
 
 import {GanttMaster } from "./ganttMaster";
-
-var $ = require('jquery');
+import $ from "jquery"
 
 // var GanttMaster = require('./ganttMaster').GanttMaster;
 

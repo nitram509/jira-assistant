@@ -5,7 +5,7 @@
  * Dual licensed under the MIT (MIT_LICENSE.txt)
  * and GPL Version 2 (GPL_LICENSE.txt) licenses.
  */
-var $ = require('jquery');
+import $ from "jquery"
 var jQuery = $;
 ((function ($) {
 

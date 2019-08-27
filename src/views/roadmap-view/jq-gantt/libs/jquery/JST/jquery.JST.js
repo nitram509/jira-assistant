@@ -1,4 +1,4 @@
-var $ = require('jquery');
+import $ from "jquery"
 
 $.fn.loadTemplates = function() {
   $.JST.loadTemplates($(this));

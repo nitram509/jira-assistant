@@ -25,7 +25,7 @@ import { GridEditor } from './ganttGridEditor'
 import { splittify } from './ganttUtilities'
 import { Ganttalendar } from "./ganttalendar";
 
-var $ = require('jquery');
+import $ from "jquery"
 var TaskFactory = require('./ganttTask').TaskFactory;
 var Resource = require('./ganttTask').Resource;
 var Task = require('./ganttTask').Task;
@@ -535,6 +535,47 @@ export class GanttMaster {
         }
 
     }
+
+    expand(task, all) {
+        //console.debug("expand",task)
+        task.collapsed = false;
+        task.rowElement.removeClass("collapsed");
+
+        var collapsedDescendant = this.getCollapsedDescendant();
+        var descs = task.getDescendant();
+        for (var i = 0; i < descs.length; i++) {
+            var childTask = descs[i];
+            if (collapsedDescendant.indexOf(childTask) >= 0) continue;
+            childTask.rowElement.show();
+        }
+        this.redraw();
+        this.storeCollapsedTasks();
+    };
+
+    storeCollapsedTasks() {
+        //console.debug("storeCollapsedTasks");
+        if (localStorage) {
+            var collTasks = [];
+            if (!localStorage.getItem("TWPGanttCollTasks"))
+                collTasks = [];
+            else
+                collTasks = localStorage.getItem("TWPGanttCollTasks");
+
+            for (var i = 0; i < this.tasks.length; i++) {
+                var task = this.tasks[i];
+
+                var pos = collTasks.indexOf(task.id);
+                if (task.collapsed) {
+                    if (pos < 0)
+                        collTasks.push(task.id);
+                } else {
+                    if (pos >= 0)
+                        collTasks.splice(pos, 1);
+                }
+            }
+            localStorage.setItem("TWPGanttCollTasks", collTasks);
+        }
+    };
 }
 
 
@@ -882,31 +923,7 @@ GanttMaster.prototype.loadCollapsedTasks = function () {
     }
 };
 
-GanttMaster.prototype.storeCollapsedTasks = function () {
-    //console.debug("storeCollapsedTasks");
-    if (localStorage) {
-        var collTasks;
-        if (!localStorage.getItem("TWPGanttCollTasks"))
-            collTasks = [];
-        else
-            collTasks = localStorage.getItem("TWPGanttCollTasks");
 
-
-        for (var i = 0; i < this.tasks.length; i++) {
-            var task = this.tasks[i];
-
-            var pos = collTasks.indexOf(task.id);
-            if (task.collapsed) {
-                if (pos < 0)
-                    collTasks.push(task.id);
-            } else {
-                if (pos >= 0)
-                    collTasks.splice(pos, 1);
-            }
-        }
-        localStorage.setItem("TWPGanttCollTasks", collTasks);
-    }
-};
 
 
 GanttMaster.prototype.updateLinks = function (task) {
@@ -1261,27 +1278,6 @@ GanttMaster.prototype.collapse = function (task, all) {
 
     //store collapse statuses
     this.storeCollapsedTasks();
-};
-
-
-GanttMaster.prototype.expand = function (task, all) {
-    //console.debug("expand",task)
-    task.collapsed = false;
-    task.rowElement.removeClass("collapsed");
-
-    var collapsedDescendant = this.getCollapsedDescendant();
-    var descs = task.getDescendant();
-    for (var i = 0; i < descs.length; i++) {
-        var childTask = descs[i];
-        if (collapsedDescendant.indexOf(childTask) >= 0) continue;
-        childTask.rowElement.show();
-    }
-
-    this.redraw();
-
-    //store collapse statuses
-    this.storeCollapsedTasks();
-
 };
 
 

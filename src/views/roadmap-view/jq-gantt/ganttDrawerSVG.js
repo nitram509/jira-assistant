@@ -25,7 +25,7 @@
  .find(".classname"))  -> .find("[class*=classname])
  */
 
-var $ = require('jquery');
+import $ from "jquery"
 
 /**
  * Allows drag and drop and extesion of task boxes. Only works on x axis

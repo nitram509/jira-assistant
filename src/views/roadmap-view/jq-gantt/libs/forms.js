@@ -19,7 +19,8 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-var $ = require('jquery');
+import $ from "jquery"
+
 var jQuery = $;
 var muteAlertOnChange = false;
 
@@ -572,7 +573,7 @@ function limitSize(ob) {
 
 // verify before unload BEGIN ----------------------------------------------------------------------------
 
-function alertOnUnload(container) {
+export function alertOnUnload(container) {
   //console.debug("alertOnUnload",container,muteAlertOnChange);
   if (!muteAlertOnChange) {
 
@@ -603,7 +604,7 @@ function alertOnUnload(container) {
   return undefined;
 }
 
-function canILeave(){
+export function canILeave(){
 	var ret = window.onbeforeunload();
 	if (typeof(ret)!="undefined" && !confirm(ret+"  \n"+i18n.PROCEED))
 		return false;
@@ -698,6 +699,3 @@ function enlargeTextArea(immediate) {
 	});
 
 }
-
-exports.alertOnUnload = alertOnUnload;
-exports.canILeave = canILeave;
