@@ -528,8 +528,7 @@ export class GanttMaster {
     };
 
     storeCollapsedTasks() {
-        const collTasksJsonString = localStorage.getItem("TWPGanttCollTasks") || "[]";
-        let collTasks = JSON.parse(collTasksJsonString);
+        let collTasks = this.loadCollapsedTasks();
         for (let i = 0; i < this.tasks.length; i++) {
             let task = this.tasks[i];
             let pos = collTasks.indexOf(task.id);
@@ -544,6 +543,11 @@ export class GanttMaster {
             }
         }
         localStorage.setItem("TWPGanttCollTasks", JSON.stringify(collTasks));
+    };
+
+    loadCollapsedTasks() {
+        const collTasksJsonString = localStorage.getItem("TWPGanttCollTasks") || "[]";
+        return JSON.parse(collTasksJsonString);
     };
 
     getTask(taskId) {
@@ -825,15 +829,6 @@ export class GanttMaster {
                     }
                 }
             }
-        }
-    };
-
-    loadCollapsedTasks() {
-        var collTasks = [];
-        if (localStorage) {
-            if (localStorage.getItem("TWPGanttCollTasks"))
-                collTasks = localStorage.getItem("TWPGanttCollTasks");
-            return collTasks;
         }
     };
 
