@@ -86,7 +86,7 @@ export class Ganttalendar {
 
     getStoredZoomLevel  () {
         if (localStorage  && localStorage.getItem("TWPGanttSavedZooms")) {
-            var savedZooms = localStorage.getItem("TWPGanttSavedZooms");
+            var savedZooms = JSON.parse(localStorage.getItem("TWPGanttSavedZooms"));
             return savedZooms[this.ganttMaster.tasks[0].id];
         }
         return false;
@@ -99,11 +99,11 @@ export class Ganttalendar {
             if (!localStorage.getItem("TWPGanttSavedZooms"))
                 savedZooms = {};
             else
-                savedZooms = localStorage.getItem("TWPGanttSavedZooms");
+                savedZooms = JSON.parse(localStorage.getItem("TWPGanttSavedZooms"));
 
             savedZooms[this.ganttMaster.tasks[0].id]=this.zoom;
 
-            localStorage.setItem("TWPGanttSavedZooms", savedZooms);
+            localStorage.setItem("TWPGanttSavedZooms", JSON.stringify(savedZooms));
         }
     };
 
