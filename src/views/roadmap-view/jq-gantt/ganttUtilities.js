@@ -41,7 +41,9 @@ export function gridify (table, opt) {
   box.append(table);
   {
     // this code should produce a fixed table header ... like in Excel 'fix first row'
-    // great feature, but doesn't work at the moment. the code can't be removed either, because logic not fully clear.
+    // great feature, but doesn't work at the moment.
+    // 1) in the original sources it doesn't work either.
+    // 2) the code can't be removed either, because logic not fully clear.
     var head = table.clone();
     head.addClass("table ganttFixHead");
     //remove non head
