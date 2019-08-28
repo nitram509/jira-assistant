@@ -528,16 +528,11 @@ export class GanttMaster {
     };
 
     storeCollapsedTasks() {
-        var collTasks = [];
-        if (!localStorage.getItem("TWPGanttCollTasks"))
-            collTasks = [];
-        else
-            collTasks = localStorage.getItem("TWPGanttCollTasks");
-
-        for (var i = 0; i < this.tasks.length; i++) {
-            var task = this.tasks[i];
-
-            var pos = collTasks.indexOf(task.id);
+        const collTasksJsonString = localStorage.getItem("TWPGanttCollTasks") || "[]";
+        let collTasks = JSON.parse(collTasksJsonString);
+        for (let i = 0; i < this.tasks.length; i++) {
+            let task = this.tasks[i];
+            let pos = collTasks.indexOf(task.id);
             if (task.collapsed) {
                 if (pos < 0) {
                     collTasks.push(task.id);
@@ -548,7 +543,7 @@ export class GanttMaster {
                 }
             }
         }
-        localStorage.setItem("TWPGanttCollTasks", collTasks);
+        localStorage.setItem("TWPGanttCollTasks", JSON.stringify(collTasks));
     };
 
     getTask(taskId) {
