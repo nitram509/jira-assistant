@@ -26,6 +26,7 @@
  */
 
 import $ from "jquery"
+import { unselectable, clearUnselectable } from './utils'
 
 /**
  * Allows drag and drop and extesion of task boxes. Only works on x axis
@@ -34,173 +35,179 @@ import $ from "jquery"
  */
 $.fn.dragExtedSVG = function (svg, opt) {
 
-  //doing this can work with one svg at once only
-  var target;
-  var svgX;
-  var offsetMouseRect;
+    //doing this can work with one svg at once only
+    var target;
+    var svgX;
+    var offsetMouseRect;
 
-  var options = {
-    canDrag:        true,
-    canResize:      true,
-    resizeZoneWidth:5,
-    minSize:        10,
-    startDrag:      function (e) {},
-    drag:           function (e) {},
-    drop:           function (e) {},
-    startResize:    function (e) {},
-    resize:         function (e) {},
-    stopResize:     function (e) {}
-  };
-
-  $.extend(options, opt);
-
-  this.each(function () {
-    var el = $(this);
-    svgX = svg.parent().offset().left; //parent is used instead of svg for a Firefox oddity
-    if (options.canDrag)
-      el.addClass("deSVGdrag");
-
-    if (options.canResize || options.canDrag) {
-      el.bind("mousedown.deSVG",function (e) {
-          //console.debug("mousedown.deSVG");
-          if ($(e.target).is("image")) {
-            e.preventDefault();
-          }
-
-          target = $(this);
-          var x1 = parseFloat(el.find("[class*=taskLayout]").offset().left);
-          var x2 = x1 + parseFloat(el.attr("width"));
-          var posx = e.pageX;
-
-          $("body").unselectable();
-
-          //start resize end
-          if (options.canResize && Math.abs(posx-x2)<=options.resizeZoneWidth) {
-            //store offset mouse x2
-            offsetMouseRect = x2 - e.pageX;
-            target.attr("oldw", target.attr("width"));
-            var one = true;
-
-            //bind event for start resizing
-            $(svg).bind("mousemove.deSVG", function (e) {
-              //hide link circle
-              $("[class*=linkHandleSVG]").hide();
-
-              if (one) {
-                //trigger startResize
-                options.startResize.call(target.get(0), e);
-                one = false;
-              }
-
-              //manage resizing
-              var nW =  e.pageX - x1 + offsetMouseRect;
-
-              target.attr("width", nW < options.minSize ? options.minSize : nW);
-              //callback
-              options.resize.call(target.get(0), e);
-            });
-
-            //bind mouse up on body to stop resizing
-            $("body").one("mouseup.deSVG", stopResize);
-
-
-          //start resize start
-          } else  if (options.canResize && Math.abs(posx-x1)<=options.resizeZoneWidth) {
-            //store offset mouse x1
-            offsetMouseRect = parseFloat(target.attr("x"));
-            target.attr("oldw", target.attr("width")); //todo controllare se è ancora usato oldw
-
-            var one = true;
-
-            //bind event for start resizing
-            $(svg).bind("mousemove.deSVG", function (e) {
-              //hide link circle
-              $("[class*=linkHandleSVG]").hide();
-
-              if (one) {
-                //trigger startResize
-                options.startResize.call(target.get(0), e);
-                one = false;
-              }
-
-              //manage resizing
-              var nx1= offsetMouseRect-(posx-e.pageX);
-              var nW = (x2-x1) + (posx-e.pageX);
-              nW=nW < options.minSize ? options.minSize : nW;
-              target.attr("x",nx1);
-              target.attr("width", nW);
-              //callback
-              options.resize.call(target.get(0), e);
-            });
-
-            //bind mouse up on body to stop resizing
-            $("body").one("mouseup.deSVG", stopResize);
-
-
-            // start drag
-          } else if (options.canDrag) {
-            //store offset mouse x1
-            offsetMouseRect = parseFloat(target.attr("x")) - e.pageX;
-            target.attr("oldx", target.attr("x"));
-
-            var one = true;
-            //bind event for start dragging
-            $(svg).bind("mousemove.deSVG",function (e) {
-              //hide link circle
-              $("[class*=linkHandleSVG]").hide();
-              if (one) {
-                //trigger startDrag
-                options.startDrag.call(target.get(0), e);
-                one = false;
-              }
-
-              //manage resizing
-              target.attr("x", offsetMouseRect + e.pageX);
-              //callback
-              options.drag.call(target.get(0), e);
-
-            }).bind("mouseleave.deSVG", drop);
-
-            //bind mouse up on body to stop resizing
-            $("body").one("mouseup.deSVG", drop);
-
-          }
+    var options = {
+        canDrag: true,
+        canResize: true,
+        resizeZoneWidth: 5,
+        minSize: 10,
+        startDrag: function (e) {
+        },
+        drag: function (e) {
+        },
+        drop: function (e) {
+        },
+        startResize: function (e) {
+        },
+        resize: function (e) {
+        },
+        stopResize: function (e) {
         }
-      ).bind("mousemove.deSVG",
-        function (e) {
-          var el = $(this);
-          var x1 = el.find("[class*=taskLayout]").offset().left;
-          var x2 = x1 + parseFloat(el.attr("width"));
-          var posx = e.pageX;
+    };
 
-          //set cursor handle
-          //if (options.canResize && (x2-x1)>3*options.resizeZoneWidth &&((posx<=x2 &&  posx >= x2- options.resizeZoneWidth) || (posx>=x1 && posx<=x1+options.resizeZoneWidth))) {
-          if (options.canResize && (Math.abs(posx-x1)<=options.resizeZoneWidth || Math.abs(posx-x2)<=options.resizeZoneWidth)) {
-            el.addClass("deSVGhand");
-          } else {
-            el.removeClass("deSVGhand");
-          }
+    $.extend(options, opt);
+
+    this.each(function () {
+        var el = $(this);
+        svgX = svg.parent().offset().left; //parent is used instead of svg for a Firefox oddity
+        if (options.canDrag)
+            el.addClass("deSVGdrag");
+
+        if (options.canResize || options.canDrag) {
+            el.bind("mousedown.deSVG", function (e) {
+                    //console.debug("mousedown.deSVG");
+                    if ($(e.target).is("image")) {
+                        e.preventDefault();
+                    }
+
+                    target = $(this);
+                    var x1 = parseFloat(el.find("[class*=taskLayout]").offset().left);
+                    var x2 = x1 + parseFloat(el.attr("width"));
+                    var posx = e.pageX;
+
+                    unselectable($("body"));
+
+                    //start resize end
+                    if (options.canResize && Math.abs(posx - x2) <= options.resizeZoneWidth) {
+                        //store offset mouse x2
+                        offsetMouseRect = x2 - e.pageX;
+                        target.attr("oldw", target.attr("width"));
+                        var one = true;
+
+                        //bind event for start resizing
+                        $(svg).bind("mousemove.deSVG", function (e) {
+                            //hide link circle
+                            $("[class*=linkHandleSVG]").hide();
+
+                            if (one) {
+                                //trigger startResize
+                                options.startResize.call(target.get(0), e);
+                                one = false;
+                            }
+
+                            //manage resizing
+                            var nW = e.pageX - x1 + offsetMouseRect;
+
+                            target.attr("width", nW < options.minSize ? options.minSize : nW);
+                            //callback
+                            options.resize.call(target.get(0), e);
+                        });
+
+                        //bind mouse up on body to stop resizing
+                        $("body").one("mouseup.deSVG", stopResize);
+
+
+                        //start resize start
+                    } else if (options.canResize && Math.abs(posx - x1) <= options.resizeZoneWidth) {
+                        //store offset mouse x1
+                        offsetMouseRect = parseFloat(target.attr("x"));
+                        target.attr("oldw", target.attr("width")); //todo controllare se è ancora usato oldw
+
+                        var one = true;
+
+                        //bind event for start resizing
+                        $(svg).bind("mousemove.deSVG", function (e) {
+                            //hide link circle
+                            $("[class*=linkHandleSVG]").hide();
+
+                            if (one) {
+                                //trigger startResize
+                                options.startResize.call(target.get(0), e);
+                                one = false;
+                            }
+
+                            //manage resizing
+                            var nx1 = offsetMouseRect - (posx - e.pageX);
+                            var nW = (x2 - x1) + (posx - e.pageX);
+                            nW = nW < options.minSize ? options.minSize : nW;
+                            target.attr("x", nx1);
+                            target.attr("width", nW);
+                            //callback
+                            options.resize.call(target.get(0), e);
+                        });
+
+                        //bind mouse up on body to stop resizing
+                        $("body").one("mouseup.deSVG", stopResize);
+
+
+                        // start drag
+                    } else if (options.canDrag) {
+                        //store offset mouse x1
+                        offsetMouseRect = parseFloat(target.attr("x")) - e.pageX;
+                        target.attr("oldx", target.attr("x"));
+
+                        var one = true;
+                        //bind event for start dragging
+                        $(svg).bind("mousemove.deSVG", function (e) {
+                            //hide link circle
+                            $("[class*=linkHandleSVG]").hide();
+                            if (one) {
+                                //trigger startDrag
+                                options.startDrag.call(target.get(0), e);
+                                one = false;
+                            }
+
+                            //manage resizing
+                            target.attr("x", offsetMouseRect + e.pageX);
+                            //callback
+                            options.drag.call(target.get(0), e);
+
+                        }).bind("mouseleave.deSVG", drop);
+
+                        //bind mouse up on body to stop resizing
+                        $("body").one("mouseup.deSVG", drop);
+
+                    }
+                }
+            ).bind("mousemove.deSVG",
+                function (e) {
+                    var el = $(this);
+                    var x1 = el.find("[class*=taskLayout]").offset().left;
+                    var x2 = x1 + parseFloat(el.attr("width"));
+                    var posx = e.pageX;
+
+                    //set cursor handle
+                    //if (options.canResize && (x2-x1)>3*options.resizeZoneWidth &&((posx<=x2 &&  posx >= x2- options.resizeZoneWidth) || (posx>=x1 && posx<=x1+options.resizeZoneWidth))) {
+                    if (options.canResize && (Math.abs(posx - x1) <= options.resizeZoneWidth || Math.abs(posx - x2) <= options.resizeZoneWidth)) {
+                        el.addClass("deSVGhand");
+                    } else {
+                        el.removeClass("deSVGhand");
+                    }
+                }
+            ).addClass("deSVG");
         }
-      ).addClass("deSVG");
+    });
+    return this;
+
+
+    function stopResize(e) {
+        $(svg).unbind("mousemove.deSVG").unbind("mouseup.deSVG").unbind("mouseleave.deSVG");
+        if (target && target.attr("oldw") != target.attr("width"))
+            options.stopResize.call(target.get(0), e); //callback
+        target = undefined;
+        clearUnselectable($("body"));
     }
-  });
-  return this;
 
-
-  function stopResize(e) {
-    $(svg).unbind("mousemove.deSVG").unbind("mouseup.deSVG").unbind("mouseleave.deSVG");
-    if (target && target.attr("oldw")!=target.attr("width"))
-      options.stopResize.call(target.get(0), e); //callback
-    target = undefined;
-    $("body").clearUnselectable();
-  }
-
-  function drop(e) {
-    $(svg).unbind("mousemove.deSVG").unbind("mouseup.deSVG").unbind("mouseleave.deSVG");
-    if (target && target.attr("oldx") != target.attr("x"))
-      options.drop.call(target.get(0), e); //callback
-    target = undefined;
-    $("body").clearUnselectable();
-  }
+    function drop(e) {
+        $(svg).unbind("mousemove.deSVG").unbind("mouseup.deSVG").unbind("mouseleave.deSVG");
+        if (target && target.attr("oldx") != target.attr("x"))
+            options.drop.call(target.get(0), e); //callback
+        target = undefined;
+        clearUnselectable($("body"));
+    }
 
 };

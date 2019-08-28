@@ -262,21 +262,6 @@ jQuery.fn.emoticonize = function () {
 	return this;
 };
 
-
-$.fn.unselectable = function () {
-	this.each(function () {
-		$(this).addClass("unselectable").attr("unselectable", "on");
-	});
-	return $(this);
-};
-
-$.fn.clearUnselectable = function () {
-	this.each(function () {
-		$(this).removeClass("unselectable").removeAttr("unselectable");
-	});
-	return $(this);
-};
-
 // ---------------------------------- initialize management
 var __initedComponents = new Object();
 

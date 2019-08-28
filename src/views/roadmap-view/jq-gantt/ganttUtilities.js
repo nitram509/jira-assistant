@@ -23,6 +23,7 @@
 
 import { showBaselineInfo } from "./gantt";
 import $ from "jquery"
+import { clearUnselectable, unselectable } from './utils'
 
 var isHoliday = require('./libs/date').isHoliday;
 var millisFromString = require('./libs/date').millisFromString;
@@ -100,7 +101,7 @@ export function gridify (table, opt) {
 
     var mousePos = e.pageX - colHeader.offset().left;
     if (colHeader.width() - mousePos < options.resizeZoneWidth) {
-      $("body").unselectable();
+      unselectable($("body"));
       $.gridify.columInResize = colHeader;
       //on event for start resizing
       $(document).on("mousemove.gdf", function (e) {
@@ -118,7 +119,7 @@ export function gridify (table, opt) {
         //on mouse up on body to stop resizing
       }).on("mouseup.gdf", function () {
         //console.debug("mouseup.gdf")
-        $(this).off("mousemove.gdf").off("mouseup.gdf").clearUnselectable();
+        clearUnselectable($(this).off("mousemove.gdf").off("mouseup.gdf"));
         $("body").removeClass("gdfHResizing");
         delete $.gridify.columInResize;
 
