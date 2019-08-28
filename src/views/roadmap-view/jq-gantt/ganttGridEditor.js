@@ -39,11 +39,12 @@ function workloadDatesChanged () {
 export function GridEditor(master) {
   this.master = master; // is the a GantEditor instance
 
-  var editorTabel = $.JST.createFromTemplate({}, "TASKSEDITHEAD");
+  var editorTable = $.JST.createFromTemplate({}, "TASKSEDITHEAD");
   if (!master.permissions.canSeeDep)
-    editorTabel.find(".requireCanSeeDep").hide();
+    editorTable.find(".requireCanSeeDep").hide();
 
-  this.gridified = gridify(editorTabel);
+  this.gridified = gridify(editorTable);
+  this.editorTable = editorTable;
   this.element = this.gridified.find(".gdfTable").eq(1);
 
   this.minAllowedDate=new Date(new Date().getTime()-3600000*24*365*20).format();

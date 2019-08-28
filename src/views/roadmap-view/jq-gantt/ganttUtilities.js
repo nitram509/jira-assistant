@@ -39,28 +39,30 @@ export function gridify (table, opt) {
 
   var box = $("<div>").addClass("gdfWrapper");
   box.append(table);
+  {
+    // this code should produce a fixed table header ... like in Excel 'fix first row'
+    // great feature, but doesn't work at the moment. the code can't be removed either, because logic not fully clear.
+    var head = table.clone();
+    head.addClass("table ganttFixHead");
+    //remove non head
+    head.find("tbody").remove();
+    box.append(head);
 
-  var head = table.clone();
-  head.addClass("table ganttFixHead");
-  //remove non head
-  head.find("tbody").remove();
-  box.append(head);
+    box.append(table);
 
-  box.append(table);
+    var hTh = head.find(".gdfColHeader");
+    var cTh = table.find(".gdfColHeader");
+    for (var i = 0; i < hTh.length; i++) {
+      hTh.eq(i).data("fTh", cTh.eq(i));
+    }
 
-  var hTh = head.find(".gdfColHeader");
-  var cTh = table.find(".gdfColHeader");
-  for (var i = 0; i < hTh.length; i++) {
-    hTh.eq(i).data("fTh", cTh.eq(i));
+    //--------- set table to 0 to prevent a strange 100%
+    table.width(0);
+    head.width(0);
   }
 
-  //--------- set table to 0 to prevent a strange 100%
-  table.width(0);
-  head.width(0);
-
-
   //----------------------  header management start
-  head.find("th.gdfColHeader:not(.gdfied)").mouseover(function () {
+  table.find("th.gdfColHeader:not(.gdfied)").mouseover(function () {
     $(this).addClass("gdfColHeaderOver");
 
   }).on("mouseout.gdf", function () {

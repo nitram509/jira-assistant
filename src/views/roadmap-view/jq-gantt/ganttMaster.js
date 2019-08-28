@@ -121,13 +121,12 @@ export class GanttMaster {
 
         //create editor
         this.editor = new GridEditor(this);
-        place.append(this.editor.gridified);
 
         //create ganttalendar
         this.ganttalendar = new Ganttalendar(new Date().getTime() - 3600000 * 24 * 2, new Date().getTime() + 3600000 * 24 * 5, this, place.width() * .6);
 
         // //setup splitter
-        $("#paneLeft").append(this.editor.gridified);
+        $("#paneLeft").append(this.editor.editorTable);
         $("#paneRight").append(this.ganttalendar.element);
 
         //prepend buttons
