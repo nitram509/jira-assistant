@@ -11,7 +11,6 @@ import './RoadmapView.css';
 import './jq-gantt/platform.css'
 import './jq-gantt/libs/jquery/dateField/jquery.dateField.css'
 import './jq-gantt/gantt.css'
-import './jq-gantt/ganttPrint.css'
 
 
 // init jQuery and all its helpers
@@ -93,7 +92,7 @@ class RoadmapView extends PureComponent {
 
 
         const GANTBUTTONS_htmlContent = '<div class="__template__" type="GANTBUTTONS"><!--\n' +
-            '  <div class="ganttButtonBar noprint">\n' +
+            '  <div class="ganttButtonBar">\n' +
             '    <div class="buttons">\n' +
             '      <a href="https://gantt.twproject.com/"><img src="res/twGanttLogo.png" alt="Twproject" align="absmiddle" style="max-width: 136px; padding-right: 15px"></a>\n' +
             '\n' +

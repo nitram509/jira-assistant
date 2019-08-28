@@ -65,28 +65,30 @@ export function gridify (table, opt) {
 
   }).on("mouseout.gdf", function () {
     $(this).removeClass("gdfColHeaderOver");
-    if (!$.gridify.columInResize) {
-      $("body").removeClass("gdfHResizing");
-    }
+    // doesn't work, since original 'gridify' is no more available
+    // if (!$.gridify.columInResize) {
+    //   $("body").removeClass("gdfHResizing");
+    // }
 
   }).on("mousemove.gdf", function (e) {
-    if (!$.gridify.columInResize) {
-      var colHeader = $(this);
-      var nextCol = colHeader.next();
-      if (nextCol.length > 0 && nextCol.width() < options.resizeZoneWidth)
-        colHeader = nextCol;
-
-      if (!colHeader.is(".gdfResizable"))
-        return;
-
-      var mousePos = e.pageX - colHeader.offset().left;
-
-      if (colHeader.width() - mousePos < options.resizeZoneWidth) {
-        $("body").addClass("gdfHResizing");
-      } else {
-        $("body").removeClass("gdfHResizing");
-      }
-    }
+    // doesn't work, since original 'gridify' is no more available
+    // if (!$.gridify.columInResize) {
+    //   var colHeader = $(this);
+    //   var nextCol = colHeader.next();
+    //   if (nextCol.length > 0 && nextCol.width() < options.resizeZoneWidth)
+    //     colHeader = nextCol;
+    //
+    //   if (!colHeader.is(".gdfResizable"))
+    //     return;
+    //
+    //   var mousePos = e.pageX - colHeader.offset().left;
+    //
+    //   if (colHeader.width() - mousePos < options.resizeZoneWidth) {
+    //     $("body").addClass("gdfHResizing");
+    //   } else {
+    //     $("body").removeClass("gdfHResizing");
+    //   }
+    // }
 
   }).on("mousedown.gdf", function (e) {
     //console.debug("mousedown.gdf")
