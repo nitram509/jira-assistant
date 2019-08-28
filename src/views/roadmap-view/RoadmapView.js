@@ -94,22 +94,20 @@ class RoadmapView extends PureComponent {
         const GANTBUTTONS_htmlContent = '<div class="__template__" type="GANTBUTTONS"><!--\n' +
             '  <div class="ganttButtonBar">\n' +
             '    <div class="buttons">\n' +
-            '      <a href="https://gantt.twproject.com/"><img src="res/twGanttLogo.png" alt="Twproject" align="absmiddle" style="max-width: 136px; padding-right: 15px"></a>\n' +
-            '\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'undo.ganttalendar\');return false;" class="button textual icon requireCanWrite" title="undo"><span class="teamworkIcon">&#39;</span></button>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'redo.ganttalendar\');return false;" class="button textual icon requireCanWrite" title="redo"><span class="teamworkIcon">&middot;</span></button>\n' +
-            '      <span class="ganttButtonSeparator requireCanWrite requireCanAdd"></span>\n' +
+            '    <span class="ganttButtonSeparator requireCanWrite requireCanAdd"></span>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'addAboveCurrentTask.ganttalendar\');return false;" class="button textual icon requireCanWrite requireCanAdd" title="insert above"><span class="teamworkIcon">l</span></button>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'addBelowCurrentTask.ganttalendar\');return false;" class="button textual icon requireCanWrite requireCanAdd" title="insert below"><span class="teamworkIcon">X</span></button>\n' +
-            '      <span class="ganttButtonSeparator requireCanWrite requireCanInOutdent"></span>\n' +
+            '    <span class="ganttButtonSeparator requireCanWrite requireCanInOutdent"></span>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'outdentCurrentTask.ganttalendar\');return false;" class="button textual icon requireCanWrite requireCanInOutdent" title="un-indent task"><span class="teamworkIcon">.</span></button>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'indentCurrentTask.ganttalendar\');return false;" class="button textual icon requireCanWrite requireCanInOutdent" title="indent task"><span class="teamworkIcon">:</span></button>\n' +
-            '      <span class="ganttButtonSeparator requireCanWrite requireCanMoveUpDown"></span>\n' +
+            '    <span class="ganttButtonSeparator requireCanWrite requireCanMoveUpDown"></span>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'moveUpCurrentTask.ganttalendar\');return false;" class="button textual icon requireCanWrite requireCanMoveUpDown" title="move up"><span class="teamworkIcon">k</span></button>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'moveDownCurrentTask.ganttalendar\');return false;" class="button textual icon requireCanWrite requireCanMoveUpDown" title="move down"><span class="teamworkIcon">j</span></button>\n' +
-            '      <span class="ganttButtonSeparator requireCanWrite requireCanDelete"></span>\n' +
+            '    <span class="ganttButtonSeparator requireCanWrite requireCanDelete"></span>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'deleteFocused.ganttalendar\');return false;" class="button textual icon delete requireCanWrite" title="Elimina"><span class="teamworkIcon">&cent;</span></button>\n' +
-            '      <span class="ganttButtonSeparator"></span>\n' +
+            '    <span class="ganttButtonSeparator"></span>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'expandAll.ganttalendar\');return false;" class="button textual icon " title="EXPAND_ALL"><span class="teamworkIcon">6</span></button>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'collapseAll.ganttalendar\'); return false;" class="button textual icon " title="COLLAPSE_ALL"><span class="teamworkIcon">5</span></button>\n' +
             '\n' +
@@ -117,23 +115,15 @@ class RoadmapView extends PureComponent {
             '      <button onclick="$(\'#workSpace\').trigger(\'zoomMinus.ganttalendar\'); return false;" class="button textual icon " title="zoom out"><span class="teamworkIcon">)</span></button>\n' +
             '      <button onclick="$(\'#workSpace\').trigger(\'zoomPlus.ganttalendar\');return false;" class="button textual icon " title="zoom in"><span class="teamworkIcon">(</span></button>\n' +
             '    <span class="ganttButtonSeparator"></span>\n' +
-            '      <button onclick="$(\'#workSpace\').trigger(\'print.ganttalendar\');return false;" class="button textual icon " title="Print"><span class="teamworkIcon">p</span></button>\n' +
-            '    <span class="ganttButtonSeparator"></span>\n' +
             '      <button onclick="ge.ganttalendar.showCriticalPath=!ge.ganttalendar.showCriticalPath; ge.redraw();return false;" class="button textual icon requireCanSeeCriticalPath" title="CRITICAL_PATH"><span class="teamworkIcon">&pound;</span></button>\n' +
-            '    <span class="ganttButtonSeparator requireCanSeeCriticalPath"></span>\n' +
-            '      <button onclick="ge.splitter.resize(.1);return false;" class="button textual icon" ><span class="teamworkIcon">F</span></button>\n' +
-            '      <button onclick="ge.splitter.resize(50);return false;" class="button textual icon" ><span class="teamworkIcon">O</span></button>\n' +
-            '      <button onclick="ge.splitter.resize(100);return false;" class="button textual icon"><span class="teamworkIcon">R</span></button>\n' +
-            '      <span class="ganttButtonSeparator"></span>\n' +
-            '      <button onclick="$(\'#workSpace\').trigger(\'fullScreen.ganttalendar\');return false;" class="button textual icon" title="FULLSCREEN" id="fullscrbtn"><span class="teamworkIcon">@</span></button>\n' +
+            '    <span class="ganttButtonSeparator"></span>\n' +
             '      <button onclick="ge.element.toggleClass(\'colorByStatus\' );return false;" class="button textual icon"><span class="teamworkIcon">&sect;</span></button>\n' +
             '\n' +
-            '    <button onclick="editResources();" class="button textual requireWrite" title="edit resources"><span class="teamworkIcon">M</span></button>\n' +
-            '      &nbsp; &nbsp; &nbsp; &nbsp;\n' +
-            '    <button onclick="saveGanttOnServer();" class="button first big requireWrite" title="Save">Save</button>\n' +
-            '    <button onclick=\'newProject();\' class=\'button requireWrite newproject\'><em>clear project</em></button>\n' +
-            '    <button class="button login" title="login/enroll" onclick="loginEnroll($(this));" style="display:none;">login/enroll</button>\n' +
-            '    <button class="button opt collab" title="Start with Twproject" onclick="collaborate($(this));" style="display:none;"><em>collaborate</em></button>\n' +
+            '      <button onclick="editResources();" class="button textual requireWrite" title="edit resources"><span class="teamworkIcon">M</span></button>\n' +
+            '    &nbsp; &nbsp; &nbsp; &nbsp;\n' +
+            '      <button onclick="saveGanttOnServer();" class="button first big requireWrite" title="Save">Save</button>\n' +
+            '      <button onclick=\'newProject();\' class=\'button requireWrite newproject\'><em>clear project</em></button>\n' +
+            '      <button class="button opt collab" title="Start with Twproject" onclick="collaborate($(this));" style="display:none;"><em>collaborate</em></button>\n' +
             '    </div></div>\n' +
             '  --></div>';
         templates.append(GANTBUTTONS_htmlContent);
