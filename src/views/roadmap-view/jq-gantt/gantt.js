@@ -7,9 +7,6 @@ import $ from "jquery"
 export function showBaselineInfo(event, element) {
     //alert(element.attr("data-label"));
     $(element).showBalloon(event, $(element).attr("data-label"));
-    ge.splitter.secondBox.one("scroll", function () {
-        $(element).hideBalloon();
-    })
 }
 
 function loadI18n(){

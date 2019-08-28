@@ -206,6 +206,7 @@ export class Ganttalendar {
 
                 //creates tasks group
                 self.tasksGroup = svg.group("tasksGroup");
+                self.tasksGroup.setAttribute('class', 'colorByStatus'); // needed for coloring, was previously at the element '#TWGanttArea'
 
                 //compute scalefactor fx
                 //self.fx = computedTableWidth / (endPeriod - startPeriod);
@@ -699,9 +700,7 @@ export class Ganttalendar {
     };
 
     redrawTasks  (drawAll) {
-        //console.debug("redrawTasks ");
         var self=this;
-        //var prof = new Profiler("ganttRedrawTasks");
 
         self.element.find("table.ganttTable").height(self.ganttMaster.editor.element.height());
 
@@ -738,14 +737,10 @@ export class Ganttalendar {
             var x = Math.round(((new Date().getTime()) - self.startMillis) * self.fx);
             self.svg.line(gridGroup, x, 0, x, "100%", {class: "ganttTodaySVG"});
         }
-
-
-        //prof.stop();
     };
 
 
     shrinkBoundaries  () {
-        //console.debug("shrinkBoundaries")
         var start = Infinity;
         var end =  -Infinity;
         for (var i = 0; i < this.ganttMaster.tasks.length; i++) {

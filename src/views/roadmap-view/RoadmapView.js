@@ -1,6 +1,9 @@
 import React, { PureComponent } from 'react';
 import { Panel } from 'primereact/panel';
 
+import SplitterLayout from 'react-splitter-layout';
+import 'react-splitter-layout/lib/index.css';
+
 import { initGanttMaster } from "./jq-gantt/gantt";
 
 import './RoadmapView.css';
@@ -49,8 +52,14 @@ class RoadmapView extends PureComponent {
                         overflowX: 'hidden',
                         border: '1px solid #e5e5e5',
                         position: 'relative',
-                        margin:'0 5px'
-                    }}/>
+                        margin:'0 5px',
+                        height: 'calc(100vh - 86px)'
+                    }}>
+                        <SplitterLayout horizontal={true}>
+                            <div id="paneLeft"/>
+                            <div id="paneRight"/>
+                        </SplitterLayout>
+                    </div>
                 </Panel>
             </div>
         );

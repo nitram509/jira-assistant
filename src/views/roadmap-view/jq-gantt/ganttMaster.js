@@ -48,7 +48,6 @@ export class GanttMaster {
 
         this.editor = undefined; //element for editor
         this.ganttalendar = undefined; //element for ganttalendar
-        this.splitter = undefined; //element for splitter
 
         this.isMultiRoot = false; // set to true in case of tasklist
 
@@ -125,7 +124,6 @@ export class GanttMaster {
         //by default task are coloured by status
         this.element.addClass('colorByStatus');
 
-        var self = this;
         //load templates
         $("#gantEditorTemplates").loadTemplates().remove();
 
@@ -136,10 +134,9 @@ export class GanttMaster {
         //create ganttalendar
         this.ganttalendar = new Ganttalendar(new Date().getTime() - 3600000 * 24 * 2, new Date().getTime() + 3600000 * 24 * 5, this, place.width() * .6);
 
-        //setup splitter
-        self.splitter = splittify(place, this.editor.gridified, this.ganttalendar.element, 60);
-        self.splitter.firstBoxMinWidth = 5;
-        self.splitter.secondBoxMinWidth = 20;
+        // //setup splitter
+        $("#paneLeft").append(this.editor.gridified);
+        $("#paneRight").append(this.ganttalendar.element);
 
         //prepend buttons
         var ganttButtons = $.JST.createFromTemplate({}, "GANTBUTTONS");
@@ -147,6 +144,7 @@ export class GanttMaster {
         this.checkButtonPermissions();
 
 
+        var self = this;
         //bindings
         workSpace.bind("deleteFocused.ganttalendar", function (e) {
             //delete task or link?
@@ -198,22 +196,6 @@ export class GanttMaster {
         }).bind("resize.ganttalendar", function () {
             self.resize();
         });
-
-
-        //bind editor scroll
-        self.splitter.firstBox.scroll(function () {
-
-            //notify scroll to editor and ganttalendar
-            self.ganttalendar.element.stopTime("test").oneTime(10, "test", function () {
-                var oldFirstRow = self.firstScreenLine;
-                var newFirstRow = Math.floor(self.splitter.firstBox.scrollTop() / self.rowHeight);
-                if (Math.abs(oldFirstRow - newFirstRow) >= self.rowBufferSize) {
-                    self.firstScreenLine = newFirstRow;
-                    self.scrolled(oldFirstRow);
-                }
-            });
-        });
-
 
         //keyboard management bindings
         $("body").bind("keydown.body", function (e) {
@@ -393,7 +375,7 @@ export class GanttMaster {
             this.maxEditableDate = Infinity;
 
 
-        //recover stored ccollapsed statuas
+        //recover stored collapsed status
         var collTasks = this.loadCollapsedTasks();
 
         //shift dates in order to have client side the same hour (e.g.: 23:59) of the server side
@@ -554,28 +536,27 @@ export class GanttMaster {
     };
 
     storeCollapsedTasks() {
-        //console.debug("storeCollapsedTasks");
-        if (localStorage) {
-            var collTasks = [];
-            if (!localStorage.getItem("TWPGanttCollTasks"))
-                collTasks = [];
-            else
-                collTasks = localStorage.getItem("TWPGanttCollTasks");
+        var collTasks = [];
+        if (!localStorage.getItem("TWPGanttCollTasks"))
+            collTasks = [];
+        else
+            collTasks = localStorage.getItem("TWPGanttCollTasks");
 
-            for (var i = 0; i < this.tasks.length; i++) {
-                var task = this.tasks[i];
+        for (var i = 0; i < this.tasks.length; i++) {
+            var task = this.tasks[i];
 
-                var pos = collTasks.indexOf(task.id);
-                if (task.collapsed) {
-                    if (pos < 0)
-                        collTasks.push(task.id);
-                } else {
-                    if (pos >= 0)
-                        collTasks.splice(pos, 1);
+            var pos = collTasks.indexOf(task.id);
+            if (task.collapsed) {
+                if (pos < 0) {
+                    collTasks.push(task.id);
+                }
+            } else {
+                if (pos >= 0) {
+                    collTasks.splice(pos, 1);
                 }
             }
-            localStorage.setItem("TWPGanttCollTasks", collTasks);
         }
+        localStorage.setItem("TWPGanttCollTasks", collTasks);
     };
 
     getTask(taskId) {
@@ -1406,13 +1387,14 @@ export class GanttMaster {
 
     resize() {
         var self = this;
-        //console.debug("GanttMaster.resize")
-        this.element.stopTime("resizeRedraw").oneTime(50, "resizeRedraw", function () {
-            self.splitter.resize();
-            self.numOfVisibleRows = Math.ceil(self.element.height() / self.rowHeight);
-            self.firstScreenLine = Math.floor(self.splitter.firstBox.scrollTop() / self.rowHeight);
-            self.ganttalendar.redrawTasks();
-        });
+        this.element
+            .stopTime("resizeRedraw")
+            .oneTime(50, "resizeRedraw", function () {
+                let paneLeft = $("#paneLeft");
+                self.numOfVisibleRows = Math.ceil(paneLeft.height() / self.rowHeight);
+                self.firstScreenLine = Math.floor(paneLeft.scrollTop() / self.rowHeight);
+                self.ganttalendar.redrawTasks();
+            });
     };
 
     scrolled(oldFirstRow) {
