@@ -108,16 +108,8 @@ export class GanttMaster {
     }
 
     init(workSpace) {
-        var place = $("<div>").prop("id", "TWGanttArea").css({
-            padding: 0,
-            "overflow-y": "auto",
-            "overflow-x": "hidden",
-            "border": "1px solid #e5e5e5",
-            position: "relative"
-        });
-        workSpace.append(place).addClass("TWGanttWorkSpace");
-
         this.workSpace = workSpace;
+        var place = $("#workSpace");
         this.element = place;
         this.numOfVisibleRows = Math.ceil(this.element.height() / this.rowHeight);
 
@@ -204,7 +196,7 @@ export class GanttMaster {
             var eventManaged = true;
             var isCtrl = e.ctrlKey || e.metaKey;
             var bodyOrSVG = e.target.nodeName.toLowerCase() == "body" || e.target.nodeName.toLowerCase() == "svg";
-            var inWorkSpace = $(e.target).closest("#TWGanttArea").length > 0;
+            var inWorkSpace = $(e.target).closest("#workSpace").length > 0;
 
             //store focused field
             var focusedField = $(":focus");
