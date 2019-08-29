@@ -249,7 +249,7 @@ Task.prototype.setPeriod = function (start, end) {
       todoOk = false;
     }
 
-    //console.debug("set period: somethingChanged",this);
+
     if (todoOk ) {
       todoOk = updateTree(this);
     }
@@ -264,7 +264,7 @@ Task.prototype.setPeriod = function (start, end) {
 
 //<%---------- MOVE TO ---------------------- --%>
 Task.prototype.moveTo = function (start, ignoreMilestones, propagateToInferiors) {
-  //console.debug("moveTo ",this.name,new Date(start),this.duration,ignoreMilestones);
+
 
 
   if (start instanceof Date) {
@@ -361,7 +361,7 @@ Task.prototype.checkMilestonesConstraints = function (newStart,newEnd,ignoreMile
 
 //<%---------- PROPAGATE TO INFERIORS ---------------------- --%>
 Task.prototype.propagateToInferiors = function (end) {
-  //console.debug("propagateToInferiors "+this.name)
+
   //and now propagate to inferiors
   var todoOk = true;
   var infs = this.getInferiors();
@@ -399,7 +399,7 @@ Task.prototype.computeStartBySuperiors = function (proposedStart) {
 
 
 function updateTree(task) {
-  //console.debug("updateTree ",task.code,task.name, new Date(task.start), new Date(task.end));
+
   var error;
 
   //try to enlarge parent
@@ -482,12 +482,12 @@ Task.prototype.getChildrenBoudaries = function () {
 
 //<%---------- CHANGE STATUS ---------------------- --%>
 Task.prototype.changeStatus = function (newStatus,forceStatusCheck) {
-  //console.debug("changeStatus: "+this.name+" from "+this.status+" -> "+newStatus);
+
 
   var cone = this.getDescendant();
 
   function propagateStatus(task, newStatus, manuallyChanged, propagateFromParent, propagateFromChildren) {
-    //console.debug("propagateStatus",task.name, task.status,newStatus, manuallyChanged, propagateFromParent, propagateFromChildren);
+
     var oldStatus = task.status;
 
     //no changes exit
@@ -641,7 +641,7 @@ Task.prototype.changeStatus = function (newStatus,forceStatusCheck) {
     }
     if (!todoOk) {
       task.status = oldStatus;
-      //console.debug("status rolled back: "+task.name + " to " + oldStatus);
+
     }
 
     return todoOk;
@@ -681,7 +681,7 @@ Task.prototype.changeStatus = function (newStatus,forceStatusCheck) {
 };
 
 Task.prototype.synchronizeStatus = function () {
-  //console.debug("synchronizeStatus",this.name);
+
   var oldS = this.status;
   this.status = this.getParent()?this.getParent().status:"STATUS_UNDEFINED"; // di default si invalida lo stato mettendo quello del padre, in modo che inde/outd siano consistenti
   return this.changeStatus(oldS,true);
@@ -824,7 +824,7 @@ Task.prototype.getInferiorTasks = function () {
 };
 
 Task.prototype.deleteTask = function () {
-  //console.debug("deleteTask",this.name,this.master.deletedTaskIds)
+
   //if is the current one remove it
   if (this.master.currentTask && this.master.currentTask.id===this.id)
     delete this.master.currentTask;
@@ -862,7 +862,7 @@ Task.prototype.isNew = function () {
 };
 
 Task.prototype.isDependent = function (t) {
-  //console.debug("isDependent",this.name, t.name)
+
   var task = this;
   var dep = this.master.links.filter(function (link) {
     return link.from === task;
@@ -890,7 +890,7 @@ Task.prototype.setLatest = function (maxCost) {
 
 //<%------------------------------------------  INDENT/OUTDENT --------------------------------%>
 Task.prototype.indent = function () {
-  //console.debug("indent", this);
+
   //a row above must exist
   var row = this.getRow();
 
@@ -960,7 +960,7 @@ Task.prototype.indent = function () {
 
 
 Task.prototype.outdent = function () {
-  //console.debug("outdent", this);
+
 
   //a level must be >1 -> cannot escape from root
   if (this.level <= 1)
@@ -1008,7 +1008,7 @@ Task.prototype.outdent = function () {
 
 //<%------------------------------------------  MOVE UP / MOVE DOWN --------------------------------%>
 Task.prototype.moveUp = function () {
-  //console.debug("moveUp", this);
+
   var ret = false;
 
   //a row above must exist
@@ -1058,7 +1058,7 @@ Task.prototype.moveUp = function () {
 
 
 Task.prototype.moveDown = function () {
-  //console.debug("moveDown", this);
+
 
   //a row below must exist, and cannot move root task
   var row = this.getRow();
@@ -1239,8 +1239,4 @@ function Role(id, name) {
   this.name = name;
 }
 
-//
-// exports.TaskFactory = TaskFactory;
-// exports.Resource = Resource;
-// exports.Task = Task;
-// exports.Link = Link;
+

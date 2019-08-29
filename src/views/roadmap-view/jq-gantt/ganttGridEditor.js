@@ -150,7 +150,7 @@ GridEditor.prototype.addTask = function (task, row, hideIfParentCollapsed) {
 };
 
 GridEditor.prototype.refreshExpandStatus = function (task) {
-  //console.debug("refreshExpandStatus",task);
+
   if (!task) return;
   if (task.isParent()) {
     task.rowElement.addClass("isParent");
@@ -167,7 +167,7 @@ GridEditor.prototype.refreshExpandStatus = function (task) {
 };
 
 GridEditor.prototype.refreshTaskRow = function (task) {
-  //console.debug("refreshTaskRow")
+
 
 
   var canWrite=this.master.permissions.canWrite || task.canWrite;
@@ -202,7 +202,7 @@ GridEditor.prototype.refreshTaskRow = function (task) {
 };
 
 GridEditor.prototype.redraw = function () {
-  //console.debug("GridEditor.prototype.redraw")
+
 
   for (var i = 0; i < this.master.tasks.length; i++) {
     this.refreshTaskRow(this.master.tasks[i]);
@@ -222,12 +222,12 @@ GridEditor.prototype.reset = function () {
 
 GridEditor.prototype.bindRowEvents = function (task, taskRow) {
   var self = this;
-  //console.debug("bindRowEvents",this,this.master,this.master.permissions.canWrite, task.canWrite);
+
 
   //bind row selection
   taskRow.click(function (event) {
     var row = $(this);
-    //console.debug("taskRow.click",row.attr("taskid"),event.target)
+
     //var isSel = row.hasClass("rowSelected");
     row.closest("table").find(".rowSelected").removeClass("rowSelected");
     row.addClass("rowSelected");
@@ -325,7 +325,7 @@ GridEditor.prototype.bindRowInputEvents = function (task, taskRow) {
 
           var leavingField = inp.prop("name");
           var dates = resynchDates(inp, row.find("[name=start]"), row.find("[name=startIsMilestone]"), row.find("[name=duration]"), row.find("[name=end]"), row.find("[name=endIsMilestone]"));
-          //console.debug("resynchDates",new Date(dates.start), new Date(dates.end),dates.duration)
+
           //update task from editor
           self.master.beginTransaction();
           self.master.changeTaskDates(task, dates.start, dates.end);
@@ -649,7 +649,7 @@ GridEditor.prototype.openFullEditor = function (task, editOnlyAssig) {
 
     //save task
     taskEditor.bind("saveFullEditor.ganttalendar",function () {
-      //console.debug("saveFullEditor");
+
       var task = self.master.getTask(taskId); // get task again because in case of rollback old task is lost
 
       self.master.beginTransaction();

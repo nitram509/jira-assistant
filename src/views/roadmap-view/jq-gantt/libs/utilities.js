@@ -46,23 +46,6 @@ function obj(element) {
 	return el;
 }
 
-if (!window.console) {
-	window.console = new function () {
-		this.log = function (str) {/*alert(str)*/};
-		this.debug = function (str) {/*alert(str)*/};
-		this.error = function (str) {/*alert(str)*/};
-	};
-}
-if (!window.console.debug || !window.console.error || !window.console.log) {
-	window.console = new function () {
-		this.log = function (str) {/*alert(str)*/};
-		this.debug = function (str) {/*alert(str)*/};
-		this.error = function (str) {/*alert(str)*/};
-	};
-}
-
-
-
 String.prototype.trim = function () {
 	return this.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1");
 };

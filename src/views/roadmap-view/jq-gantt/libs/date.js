@@ -383,14 +383,6 @@ Date.prototype.isOutOfRange = function (minDate, maxDate) {
   if(typeof maxDate == "string")
     maxDate = Date.parseString(maxDate);
 
-
-  /*
-   console.debug("date:: ", this);
-   console.debug("minDate:: ", minDate);
-   console.debug("maxDate:: ", maxDate);
-   console.debug("isDisabled:: ", this.isBefore(minDate) , this.isAfter(maxDate));
-   */
-
   return (this.isBefore(minDate) || this.isAfter(maxDate));
 };
 
