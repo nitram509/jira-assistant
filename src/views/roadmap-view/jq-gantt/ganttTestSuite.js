@@ -358,7 +358,7 @@ ganttTestUnits.push({name: "Cambia la durata da 1 a 3 giorni: devono essere davv
   assertOk:                function () {
     //la distanza deve essere 3
     var distanceInUnits = getDurationInUnits(new Date(ge.tasks[0].start), new Date(ge.tasks[0].end));
-    //console.debug("Test 16: distanceInUnits="+distanceInUnits);
+    
     return distanceInUnits == 3;
   }
 });

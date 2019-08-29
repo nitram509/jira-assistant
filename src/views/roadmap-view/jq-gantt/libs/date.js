@@ -343,7 +343,7 @@ Date.parseString = function(val, format,lenient) {
     var f=format.replace("MMMM","M").replace("MMM","M").replace("MM","M")
     .replace("yyyy","y").replace("yyy","y").replace("yy","y")
     .replace("dd","d");
-    //console.debug("second round with format "+f);
+    
     return this._getDate(val, f);
   } else {
     return theDate;
@@ -577,7 +577,7 @@ Date.prototype.isToday=function(){
 
 
 Date.prototype.incrementDateByWorkingDays=function (days) {
-  //console.debug("incrementDateByWorkingDays start ",d,days)
+  
   var q = Math.abs(days);
   while (q > 0) {
     this.setDate(this.getDate() + (days > 0 ? 1 : -1));
@@ -625,7 +625,7 @@ Date.prototype.distanceInWorkingDays= function (toDate){
   }
   days=days*(this>toDate?-1:1);
 
-  //console.debug("distanceInWorkingDays",this,toDate,days);
+  
   return days;
 };
 
@@ -683,7 +683,7 @@ function getMillisInDaysHoursMinutes(millis) {
 
 
 function millisToString(millis,considerWorkingdays) {
-  // console.debug("millisToString",millis)
+  
   if (!millis)
     return "";
   // millisInWorkingDay is set on partHeaderFooter
@@ -694,7 +694,7 @@ function millisToString(millis,considerWorkingdays) {
   var hour = Math.floor((millis % wm) / 3600000);
   var min = Math.floor((millis-days*wm-hour*3600000) / 60000);
   var sec = Math.floor((millis-days*wm-hour*3600000-min*60000) / 1000);
-  //console.debug("millisToString",wm, millis,days,hour,min)
+  
   return (sgn>=0?"":"-")+(days > 0 ? days + "d " : "") + (hour>0? (days>0?" ":"")+hour+"h":"") +(min>0?(days>0||hour>0?" ":"")+min+"m":"")+ (sec>0?+sec+"s":"");
 }
 

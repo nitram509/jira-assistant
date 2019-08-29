@@ -69,7 +69,7 @@ $.fn.dragExtedSVG = function (svg, opt) {
 
         if (options.canResize || options.canDrag) {
             el.bind("mousedown.deSVG", function (e) {
-                    //console.debug("mousedown.deSVG");
+
                     if ($(e.target).is("image")) {
                         e.preventDefault();
                     }

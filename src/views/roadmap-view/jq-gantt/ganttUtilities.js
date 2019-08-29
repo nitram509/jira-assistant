@@ -93,7 +93,7 @@ export function gridify (table, opt) {
     // }
 
   }).on("mousedown.gdf", function (e) {
-    //console.debug("mousedown.gdf")
+    
     var colHeader = $(this);
 
     var nextCol = colHeader.next();
@@ -122,7 +122,7 @@ export function gridify (table, opt) {
 
         //on mouse up on body to stop resizing
       }).on("mouseup.gdf", function () {
-        //console.debug("mouseup.gdf")
+        
         clearUnselectable($(this).off("mousemove.gdf").off("mouseup.gdf"));
         $("body").removeClass("gdfHResizing");
         delete $.gridify.columInResize;
@@ -134,7 +134,7 @@ export function gridify (table, opt) {
     }
 
   }).on("dblclick.gdf", function () {
-    //console.debug("dblclick.gdf")
+    
     var col = $(this);
 
     if (!col.is(".gdfResizable"))
@@ -164,7 +164,7 @@ export function gridify (table, opt) {
 
 
   function storeGridState() {
-    //console.debug("storeGridState");
+    
     if (localStorage) {
       var gridState = {};
 
@@ -180,7 +180,7 @@ export function gridify (table, opt) {
   }
 
   function loadGridState() {
-    //console.debug("loadGridState")
+    
     if (localStorage) {
       if (localStorage.getItem("TWPGanttGridState")) {
         var gridState = localStorage.getItem("TWPGanttGridState");
@@ -254,7 +254,7 @@ export function computeEndDate(end) {
 }
 
 export function computeEndByDuration(start, duration) {
-//console.debug("computeEndByDuration start ",d,duration)
+
   var d = new Date(start);
   var q = duration - 1;
   while (q > 0) {
@@ -275,15 +275,15 @@ function incrementDateByWorkingDays(date, days) {
 
 
 export function recomputeDuration(start, end) {
-  //console.debug("recomputeDuration");
+  
   return getDurationInUnits(new Date(start),new Date(end));
 }
 
 export function resynchDates(leavingField, startField, startMilesField, durationField, endField, endMilesField) {
-  //console.debug("resynchDates",leavingField.prop("name"), "start. "+startField.val(),"durationField: "+ durationField.val(), "endField: "+endField.val());
+  
 
   function resynchDatesSetFields(command) {
-    //console.debug("resynchDatesSetFields",command);
+    
     var duration = stringToDuration(durationField.val());
     var start = computeStart(Date.parseString(startField.val()).getTime());
 

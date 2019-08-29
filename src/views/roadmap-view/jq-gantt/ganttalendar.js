@@ -52,7 +52,7 @@ export class Ganttalendar {
     };
 
     synchHighlight() {
-        //console.debug("synchHighlight",this.ganttMaster.currentTask);
+        
         if (this.ganttMaster.currentTask ){
             // take care of collapsed rows
             var ganttHighLighterPosition=this.ganttMaster.editor.element.find(".taskEditRow:visible").index(this.ganttMaster.currentTask.rowElement);
@@ -116,8 +116,8 @@ export class Ganttalendar {
     };
 
     createGanttGrid  () {
-        //console.debug("Gantt.createGanttGrid zoom: "+this.zoom +"  " + new Date(this.originalStartMillis).format() + " - " + new Date(this.originalEndMillis).format());
-        //var prof = new Profiler("ganttDrawer.createGanttGrid");
+        
+
         var self = this;
 
         // get the zoomDrawer
@@ -173,7 +173,7 @@ export class Ganttalendar {
         //create the svg
         box.svg({settings:{class:"ganttSVGBox"},
             onLoad:         function (svg) {
-                //console.debug("svg loaded", svg);
+                
 
                 //creates gradient and definitions
                 var defs = svg.defs('myDefs');
@@ -207,14 +207,14 @@ export class Ganttalendar {
 
 //<%-------------------------------------- GANT TASK GRAPHIC ELEMENT --------------------------------------%>
     drawTask  (task) {
-        //console.debug("drawTask", task.name,this.ganttMaster.showBaselines,this.taskHeight);
+        
         var self = this;
-        //var prof = new Profiler("ganttDrawTask");
+
 
         if (self.ganttMaster.showBaselines) {
             var baseline = self.ganttMaster.baselines[task.id];
             if (baseline) {
-                //console.debug("baseLine",baseline)
+                
                 var baseTask = $(_createBaselineSVG(task, baseline));
                 baseTask.css("opacity", .5);
                 task.ganttBaselineElement = baseTask;
@@ -364,7 +364,7 @@ export class Ganttalendar {
 
                     $(self.svg.root()).unbind("mousemove.linkSVG");
                     var targetBox = $(e.target).closest(".taskBoxSVG");
-                    //console.debug("create link from " + taskBox.attr("taskid") + " to " + targetBox.attr("taskid"));
+                    
 
                     if (targetBox && targetBox.attr("taskid") != taskBox.attr("taskid")) {
                         var taskTo;
@@ -512,7 +512,7 @@ export class Ganttalendar {
 //<%-------------------------------------- GANT DRAW LINK SVG ELEMENT --------------------------------------%>
 //'from' and 'to' are tasks already drawn
     drawLink  (from, to, type) {
-        //console.debug("drawLink")
+        
         var self = this;
         var peduncolusSize = 10;
 
@@ -655,12 +655,12 @@ export class Ganttalendar {
     };
 
     redrawLinks  () {
-        //console.debug("redrawLinks ");
+        
         var self = this;
         this.element.stopTime("ganttlnksredr");
         this.element.oneTime(10, "ganttlnksredr", function () {
 
-            //var prof=new Profiler("gd_drawLink_real");
+
 
             //remove all links
             $("#linksGroup").empty();
@@ -772,8 +772,8 @@ export class Ganttalendar {
     };
 
     redraw  () {
-        //console.debug("redraw",this.zoom, this.originalStartMillis, this.originalEndMillis);
-        //var prof= new Profiler("Ganttalendar.redraw");
+        
+
 
         if (this.showCriticalPath) {
             this.ganttMaster.computeCriticalPath();

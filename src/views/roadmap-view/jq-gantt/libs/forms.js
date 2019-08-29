@@ -353,7 +353,7 @@ function limitSize(ob) {
 // verify before unload BEGIN ----------------------------------------------------------------------------
 
 export function alertOnUnload(container) {
-  //console.debug("alertOnUnload",container,muteAlertOnChange);
+  
   if (!muteAlertOnChange) {
 
     //first try to call a function eventually defined on the page
@@ -364,7 +364,7 @@ export function alertOnUnload(container) {
     var inps= $("[alertonchange=true]",container).find("[oldValue=1]");
     for (var j = 0; j < inps.length; j++) {
       var anInput = inps.eq(j);
-      //console.debug(j,anInput,anInput.isValueChanged())
+      
       var oldValue = anInput.getOldValue() + "";
       if (!('true' == '' + anInput.attr('excludeFromAlert'))) {
         if (anInput.attr("maleficoTiny")) {
@@ -409,7 +409,7 @@ jQuery.fn.isValueChanged = function () {
 		var el = $(this);
 		var val=(el.is(":checkbox,:radio")?el.prop("checked"):el.val())+"";
 		if (val != el.data("_oldvalue") + "") {
-			//console.debug("io sono diverso "+el.prop("id")+ " :"+el.val()+" != "+el.data("_oldvalue"));
+			
 			ret = true;
 			return false;
 		}
@@ -441,7 +441,7 @@ jQuery.fn.fillJsonWithInputValues = function (jsonObject) {
 
 
 function enlargeTextArea(immediate) {
-  //console.debug("enlargeTextArea",immediate);
+  
 	var el = $(this);
 
   var delay=immediate===true?1:300;

@@ -27,7 +27,7 @@ var $ = jQuery;
 var nearBestPosition = require('../../layout').nearBestPosition;
 
 jQuery.fn.dateField = function(options) {
-  //console.debug("dateField",options);
+  
   //check if the input field is passed correctly
   if (!options.inputField){
     console.error("You must supply an input field");
@@ -128,11 +128,11 @@ jQuery.fn.dateField = function(options) {
 
   calendar.drawCalendar = function(date) {
     calendar.currentDate = date;
-    //console.debug("drawCalendar",date);
+    
 
 
     var fillNavBar = function(date) {
-      //console.debug("fillNavBar",date);
+      
       var today = new Date();//today
       divNavBar.empty();
 

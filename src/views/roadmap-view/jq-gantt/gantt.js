@@ -71,7 +71,7 @@ var randomData = [
 ];
 
 function getDemoProject() {
-    //console.debug("getDemoProject")
+
     // {
     //   "id": -1,
     //   "name": "Gantt editor",

@@ -70,7 +70,7 @@ function showFeedbackMessage(typeOrObject, message, title, autoCloseTime) {
 	if(!autoCloseTime)
 		autoCloseTime = 0;
 
-	//console.debug("showFeedbackMessage",typeOrObject, message, title);
+	
 	var place = $("#__FEEDBACKMESSAGEPLACE");
 	var mess;
 	if (typeof(typeOrObject)=="object" )
@@ -136,7 +136,7 @@ function submitInBlack(formId, actionHref, w, h) {
 
 var __popups = [];
 export function createModalPopup(width, height, onCloseCallBack, cssClass, element, popupOpener) {
-  //console.debug("createModalPopup");
+  
 
 
   // if (typeof(disableUploadize)=="function")
@@ -274,7 +274,7 @@ export function createModalPopup(width, height, onCloseCallBack, cssClass, eleme
     // if (typeof (enableUploadize)=="function")
 	// 	  enableUploadize();
 
-    //console.debug("ndo",ndo);
+    
 
 		var alertMsg;
     var ifr=bg.find("iframe");
@@ -375,7 +375,7 @@ function getBlackPopupOpener(){
 }
 
 export function closeBlackPopup(callBackdata) {
-	//console.debug("closeBlackPopup ",callBackdata);
+	
 	var bp = getBlackPopup();
 
 	if (callBackdata)
@@ -411,7 +411,7 @@ function openBulkAction(bulkDivId){
 
 
 function refreshBulk(el) {
-	//console.debug("refreshBulk")
+	
 
 	if (el.is(":checked"))
 		el.closest("tr").addClass("selected");

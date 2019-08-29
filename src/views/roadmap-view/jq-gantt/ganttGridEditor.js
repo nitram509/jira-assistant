@@ -53,11 +53,11 @@ export function GridEditor(master) {
 
 
 GridEditor.prototype.fillEmptyLines = function () {
-  //console.debug("fillEmptyLines")
+
   var factory = new TaskFactory();
   var master = this.master;
 
-  //console.debug("GridEditor.fillEmptyLines");
+
   var rowsToAdd = master.minRowsInEditor - this.element.find(".taskEditRow").length;
   var empty=this.element.find(".emptyRow").length;
   rowsToAdd=Math.max(rowsToAdd,empty>5?0:5-empty);
@@ -70,7 +70,7 @@ GridEditor.prototype.fillEmptyLines = function () {
 
     //click on empty row create a task and fill above
     emptyRow.click(function (ev) {
-      //console.debug("emptyRow.click")
+
       var emptyRow = $(this);
       //add on the first empty row only
       if (!master.permissions.canAdd || emptyRow.prevAll(".emptyRow").length > 0)
@@ -104,8 +104,8 @@ GridEditor.prototype.fillEmptyLines = function () {
 
 
 GridEditor.prototype.addTask = function (task, row, hideIfParentCollapsed) {
-  //console.debug("GridEditor.addTask",task,row);
-  //var prof = new Profiler("ganttGridEditor.addTask");
+
+
 
   //remove extisting row
   this.element.find("#tid_" + task.id).remove();
@@ -168,7 +168,7 @@ GridEditor.prototype.refreshExpandStatus = function (task) {
 
 GridEditor.prototype.refreshTaskRow = function (task) {
   //console.debug("refreshTaskRow")
-  //var profiler = new Profiler("editorRefreshTaskRow");
+
 
   var canWrite=this.master.permissions.canWrite || task.canWrite;
 
@@ -203,7 +203,7 @@ GridEditor.prototype.refreshTaskRow = function (task) {
 
 GridEditor.prototype.redraw = function () {
   //console.debug("GridEditor.prototype.redraw")
-  //var prof = new Profiler("ganttalendar.GridEditor.redraw");
+
   for (var i = 0; i < this.master.tasks.length; i++) {
     this.refreshTaskRow(this.master.tasks[i]);
   }

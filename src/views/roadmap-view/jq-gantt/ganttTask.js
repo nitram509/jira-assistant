@@ -118,8 +118,8 @@ Task.prototype.createAssignment = function (id, resourceId, roleId, effort) {
 
 //<%---------- SET PERIOD ---------------------- --%>
 Task.prototype.setPeriod = function (start, end) {
-  //console.debug("setPeriod ",this.code,this.name,new Date(start), new Date(end));
-  //var profilerSetPer = new Profiler("gt_setPeriodJS");
+  
+
 
   if (start instanceof Date) {
     start = start.getTime();
@@ -265,7 +265,7 @@ Task.prototype.setPeriod = function (start, end) {
 //<%---------- MOVE TO ---------------------- --%>
 Task.prototype.moveTo = function (start, ignoreMilestones, propagateToInferiors) {
   //console.debug("moveTo ",this.name,new Date(start),this.duration,ignoreMilestones);
-  //var profiler = new Profiler("gt_task_moveTo");
+
 
   if (start instanceof Date) {
     start = start.getTime();

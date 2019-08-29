@@ -27,7 +27,7 @@ var jQuery = $;
 jQuery.fn.centerOnScreen = function () {
   return this.each(function () {
     var container = $(this);
-    //console.debug($(window).height(), container.outerHeight(),(($(window).height() - container.outerHeight()) / 2))
+    
     container.css("position", "fixed");
     container.css("top", (($(window).height() - container.outerHeight()) / 2) + 'px');
     container.css("left", (($(window).width() - container.outerWidth()) / 2) + 'px');

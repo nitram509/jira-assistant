@@ -266,7 +266,7 @@ jQuery.fn.emoticonize = function () {
 var __initedComponents = new Object();
 
 function initialize(url, type, ndo) {
-  //console.debug("initialize before: " + url);
+  
   var normUrl = url.asId();
   var deferred = $.Deferred();
 
@@ -285,18 +285,18 @@ function initialize(url, type, ndo) {
         dataType:   "script",
         cache:      true,
         success:    function () {
-          //console.debug("initialize loaded:" + url);
+          
           deferred.resolve()
         },
         error:      function () {
-          //console.debug("initialize failed:" + url);
+          
           deferred.reject();
         }
       });
 
 
     } else {
-      //console.debug(url+" as DOM");
+      
       //var text = getContent(url);
       url = url + (url.indexOf("?") > -1 ? "&" : "?") + buildNumber;
       var text = $.ajax({
@@ -305,13 +305,13 @@ function initialize(url, type, ndo) {
         dataType: "html",
         cache:    true,
         success:  function (text) {
-          //console.debug("initialize loaded:" + url);
+          
           ndo = ndo || $("body");
           ndo.append(text);
           deferred.resolve()
         },
         error:    function () {
-          //console.debug("initialize failed:" + url);
+          
           deferred.reject();
         }
       });
@@ -336,7 +336,7 @@ function registerEvent(eventName,callback) {
 
 
 function openPersistentFile(file) {
-  //console.debug("openPersistentFile",file);
+  
   var t=window.self;
   try{
     if(window.top != window.self)
@@ -345,11 +345,11 @@ function openPersistentFile(file) {
 
   if (file.mime.indexOf("image") >= 0) {
     var img = $("<img>").prop("src", file.url).css({position: "absolute", top: "-10000px", left: "-10000px"}).one("load", function () {
-      //console.debug("image loaded");
+      
       var img = $(this);
       var w = img.width();
       var h = img.height();
-      //console.debug("image loaded",w,h);
+      
       var f=w/h;
       var ww = $(t).width()*.8;
       var wh = $(t).height()*.8;
