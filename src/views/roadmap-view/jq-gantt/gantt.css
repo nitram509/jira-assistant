@@ -453,6 +453,7 @@ select.taskStatus{
   background-color: transparent;
   width: 100%;
   overflow-y: hidden; /*IE11 bug*/
+  margin-top: 2px;
 }
 
 .taskBoxSVG{

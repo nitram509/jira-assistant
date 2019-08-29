@@ -71,7 +71,7 @@ class RoadmapView extends PureComponent {
         const TASKSEDITHEAD_htmlContent = '<div class="__template__" type="TASKSEDITHEAD"><!--\n' +
             '  <table class="gdfTable" cellspacing="0" cellpadding="0">\n' +
             '    <thead>\n' +
-            '    <tr style="height:40px">\n' +
+            '    <tr style="height:42px">\n' +
             '      <th class="gdfColHeader" style="width:35px; border-right: none"></th>\n' +
             '      <th class="gdfColHeader" style="width:25px;"></th>\n' +
             '      <th class="gdfColHeader gdfResizable" style="width:100px;">code/short name</th>\n' +

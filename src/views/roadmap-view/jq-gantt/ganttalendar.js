@@ -716,8 +716,10 @@ export class Ganttalendar {
         }
 
         //creates rows grid
-        for (var i = 40; i <= self.ganttMaster.editor.element.height(); i += self.ganttMaster.rowHeight)
-            self.svg.rect(gridGroup, 0, i, "100%", self.ganttMaster.rowHeight, {class: "ganttLinesSVG"});
+        const heightCorrectionValue = 2;
+        for (var i = 40; i <= self.ganttMaster.editor.element.height(); i += (self.ganttMaster.rowHeight + heightCorrectionValue)){
+            self.svg.rect(gridGroup, 0, i, "100%", self.ganttMaster.rowHeight + heightCorrectionValue, {class: "ganttLinesSVG"});
+        }
 
         // drawTodayLine
         if (new Date().getTime() > self.startMillis && new Date().getTime() < self.endMillis) {
