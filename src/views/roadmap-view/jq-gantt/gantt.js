@@ -52,14 +52,6 @@ function loadFromLocalStorage() {
     return ret;
 }
 
-
-function saveInLocalStorage() {
-    var prj = ge.saveProject();
-    if (localStorage) {
-        localStorage.setItem("teamworkGantDemo", prj);
-    }
-}
-
 var randomData = [
     "Epic,RMP-1,36660,some items to be balanced,",
     "Epic,RMP-95,35984,lighten a candle,Phase 3",

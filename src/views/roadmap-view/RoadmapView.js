@@ -310,20 +310,20 @@ class RoadmapView extends PureComponent {
             var resEl = assigTr.find("[name=resourceId]");
             var opt = jquery("<option>");
             resEl.append(opt);
-            for(var i=0; i< taskAssig.task.master.resources.length;i++){
+            for(let i=0; i< taskAssig.task.master.resources.length;i++){
                 var res = taskAssig.task.master.resources[i];
                 opt = jquery("<option>");
                 opt.val(res.id).html(res.name);
-                if(taskAssig.assig.resourceId == res.id)
+                if(taskAssig.assig.resourceId === res.id)
                     opt.attr("selected", "true");
                 resEl.append(opt);
             }
             var roleEl = assigTr.find("[name=roleId]");
-            for(var i=0; i< taskAssig.task.master.roles.length;i++){
+            for(let i=0; i< taskAssig.task.master.roles.length;i++){
                 var role = taskAssig.task.master.roles[i];
                 var optr = jquery("<option>");
                 optr.val(role.id).html(role.name);
-                if(taskAssig.assig.roleId == role.id)
+                if(taskAssig.assig.roleId === role.id)
                     optr.attr("selected", "true");
                 roleEl.append(optr);
             }
