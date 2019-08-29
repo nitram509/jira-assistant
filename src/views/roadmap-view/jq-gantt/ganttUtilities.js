@@ -21,12 +21,10 @@
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import { showBaselineInfo } from "./gantt";
 import $ from "jquery"
 import { clearUnselectable, unselectable } from './utils'
 
 var isHoliday = require('./libs/date').isHoliday;
-var millisFromString = require('./libs/date').millisFromString;
 var daysFromString = require('./libs/date').daysFromString;
 var canILeave = require('./libs/forms').canILeave;
 
