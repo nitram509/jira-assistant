@@ -77,37 +77,24 @@ export class Ganttalendar {
             curLevel = this.zoomLevels[newPos];
             this.gridChanged=true;
             this.zoom = curLevel;
-
-            this.storeZoomLevel();
+            this.storeZoomLevel(this.zoom);
             this.redraw();
             this.goToMillis(centerMillis);
         }
     };
 
-    getStoredZoomLevel  () {
-        if (localStorage  && localStorage.getItem("TWPGanttSavedZooms")) {
-            var savedZooms = JSON.parse(localStorage.getItem("TWPGanttSavedZooms"));
-            return savedZooms[this.ganttMaster.tasks[0].id];
-        }
-        return false;
+    getStoredZoomLevelOrDefault(){
+        const zoomLevelString = localStorage.getItem("TWPGanttSavedZooms") || "{ \"zoomLevel\":0 }";
+        var savedZooms = JSON.parse(zoomLevelString);
+        return savedZooms.zoomLevel;
     };
 
-    storeZoomLevel  () {
-        //console.debug("storeZoomLevel: "+this.zoom);
-        if (localStorage) {
-            var savedZooms;
-            if (!localStorage.getItem("TWPGanttSavedZooms"))
-                savedZooms = {};
-            else
-                savedZooms = JSON.parse(localStorage.getItem("TWPGanttSavedZooms"));
+    storeZoomLevel(zoomLevel){
+        var savedZooms = {zoomLevel: zoomLevel};
+        localStorage.setItem("TWPGanttSavedZooms", JSON.stringify(savedZooms));
+    }
 
-            savedZooms[this.ganttMaster.tasks[0].id]=this.zoom;
-
-            localStorage.setItem("TWPGanttSavedZooms", JSON.stringify(savedZooms));
-        }
-    };
-
-    createHeadCell(level,zoomDrawer,rowCtx,lbl, span, additionalClass,start, end) {
+    createHeadCell(level,zoomDrawer,rowCtx,lbl, span, additionalClass,start, end){
         // var x = (start.getTime() - this.startMillis)* zoomDrawer.computedScaleX;
         var th = $("<th>").html(lbl).attr("colSpan", span);
         if (level>1) { //set width on second level only
@@ -117,7 +104,7 @@ export class Ganttalendar {
         if (additionalClass)
             th.addClass(additionalClass);
         rowCtx.append(th);
-    };
+    }
 
     createBodyCell(zoomDrawer,tr,span, isEnd, additionalClass) {
         var ret = $("<td>").html("").attr("colSpan", span).addClass("ganttBodyCell");
@@ -765,15 +752,7 @@ export class Ganttalendar {
         this.originalEndMillis=end;
     };
 
-    setBestFittingZoom  () {
-        //console.debug("setBestFittingZoom");
-
-        if (this.getStoredZoomLevel()) {
-            this.zoom = this.getStoredZoomLevel();
-            return;
-        }
-
-
+    setBestFittingZoom(){
         //if zoom is not defined get the best fitting one
         var dur = this.originalEndMillis -this.originalStartMillis;
         var minDist = Number.MAX_VALUE;
@@ -787,9 +766,7 @@ export class Ganttalendar {
             }
             this.zoom = this.zoomLevels[i];
         }
-
         this.zoom=this.zoom||this.zoomLevels[this.zoomLevels.length-1];
-
     };
 
     redraw  () {

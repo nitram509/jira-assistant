@@ -388,9 +388,8 @@ export class GanttMaster {
             this.ganttalendar.zoom = project.zoom;
         } else {
             this.ganttalendar.shrinkBoundaries();
-            this.ganttalendar.setBestFittingZoom();
+            this.ganttalendar.zoom = this.ganttalendar.getStoredZoomLevelOrDefault();
         }
-
 
         this.endTransaction();
         var self = this;
