@@ -265,8 +265,13 @@ GridEditor.prototype.bindRowEvents = function (task, taskRow) {
     taskRow.find(".edit").click(function () {self.openFullEditor(task, false)});
 
     taskRow.dblclick(function (ev) { //open editor only if no text has been selected
-      if (window.getSelection().toString().trim()==="")
-        self.openFullEditor(task, $(ev.target).closest(".taskAssigs").size()>0)
+      if (window.getSelection().toString().trim()==="") {
+          const target = $(ev.target).closest(".taskAssigs");
+          if (target.length > 0) {
+            // todo: figure out, if we need this at all?
+            self.openFullEditor(task, target.size()>0)
+          }
+        }
       });
   }
   //prof.stop();
