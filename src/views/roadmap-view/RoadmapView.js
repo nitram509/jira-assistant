@@ -1,6 +1,8 @@
 import React, { PureComponent } from 'react';
 import { Panel } from 'primereact/panel';
 
+import ReactDataGrid from 'react-data-grid';
+
 import SplitterLayout from 'react-splitter-layout';
 import 'react-splitter-layout/lib/index.css';
 
@@ -12,6 +14,7 @@ import './jq-gantt/platform.css'
 import './jq-gantt/libs/jquery/dateField/jquery.dateField.css'
 import './jq-gantt/gantt.css'
 
+import { inject } from '../../services/injector-service';
 
 // init jQuery and all its helpers
 import jquery from 'jquery';
@@ -23,14 +26,55 @@ import './jq-gantt/libs/jquery/JST/jquery.JST.js'
 import './jq-gantt/libs/jquery/svg/jquery.svg.js'
 import './jq-gantt/libs/jquery/svg/jquery.svgdom.1.8.js'
 import './jq-gantt/ganttDrawerSVG.js'
+import Button from "../../controls/Button";
+import { showContextMenu } from "../../controls/ContextMenu";
+import sessionBasedRoute from "../../routes";
+
 window.$ = window.jQuery = jquery;
 
+const columns = [
+    {key: "id", name: "ID", editable: true, width: 25, resizable: true},
+    {key: "code", name: "Code", editable: true, width: 80, resizable: true},
+    {key: "name", name: "Name", editable: true, width: 350, resizable: true},
+    {key: "x", name: "*", editable: true, width: 10, resizable: true},
+    {key: "start", name: "Start", editable: true, width: 90, resizable: true},
+    {key: "y", name: "*", editable: true, width: 10, resizable: true},
+    {key: "end", name: "End", editable: true, width: 90, resizable: true},
+    {key: "duration", name: "dur.", editable: true, width: 50, resizable: true},
+    {key: "completed", name: "%", editable: true, width: 25, resizable: true},
+    {key: "dependent", name: "depe.", editable: true, width: 50, resizable: true},
+    {key: "assignee", name: "Assignee", editable: true, width: 300, resizable: true}
+];
+
+const rows = [
+    {id: 0, name: "Task 1", completed: 20},
+    {id: 1, name: "Task 2", completed: 40},
+    {id: 2, name: "Task 3", completed: 60}
+];
+
 class RoadmapView extends PureComponent {
+
     constructor(props) {
         super(props);
-        var { match: { params } } = props;
-        this.state = { searchText: (params['query'] || "").trim() };
+
+        inject(this, "JiraService");
+
+        var {match: {params}} = props;
+        this.state = {
+            searchText: (params['query'] || "").trim(),
+            rows: rows
+        };
     }
+
+    onGridRowsUpdated = ({fromRow, toRow, updated}) => {
+        this.setState(state => {
+            const rows = state.rows.slice();
+            for (let i = fromRow; i <= toRow; i++) {
+                rows[i] = {...rows[i], ...updated};
+            }
+            return {rows};
+        });
+    };
 
     componentDidMount() {
         if (this.state.searchText.length > 0) {
@@ -40,22 +84,43 @@ class RoadmapView extends PureComponent {
         this.ganttEditor = initGanttMaster();
     }
 
+    onLoadTickets(event) {
+        const openTickets = this.$jira.getOpenTickets().then((result) => {
+            this.setState( state => {
+               state.rows.add({id:3, code:result[0].key, name:result[0].summary});
+               return state;
+            });
+            console.debug(result);
+        });
+    }
+
     render() {
         return (
             <div className="widget-cntr width-perc-100">
                 <Panel styleclass="p-no-padding" showheader={false}>
                     <h1>Roadmap</h1>
+                    <div className="pull-left">
+                        <Button type="success" icon="fa" label="Load Tickets" onClick={(e) => this.onLoadTickets(e)} />
+                    </div>
                     <div id="workSpace" style={{
                         padding: '0px',
                         overflowY: 'auto',
                         overflowX: 'hidden',
                         border: '1px solid #e5e5e5',
                         position: 'relative',
-                        margin:'0 5px',
+                        margin: '0 5px',
                         height: 'calc(100vh - 86px)'
                     }}>
                         <SplitterLayout horizontal={true}>
-                            <div id="paneLeft"/>
+                            <div id="paneLeft">
+                                <ReactDataGrid
+                                    columns={columns}
+                                    rowGetter={i => this.state.rows[i]}
+                                    rowsCount={3}
+                                    onGridRowsUpdated={this.onGridRowsUpdated}
+                                    enableCellSelect={true}
+                                />
+                            </div>
                             <div id="paneRight"/>
                         </SplitterLayout>
                     </div>
@@ -302,35 +367,39 @@ class RoadmapView extends PureComponent {
 
         jquery('#workSpace').parent().append(templates);
 
-        jquery.JST.loadDecorator("RESOURCE_ROW", function(resTr, res){
-            resTr.find(".delRes").click(function(){jquery(this).closest("tr").remove()});
+        jquery.JST.loadDecorator("RESOURCE_ROW", function (resTr, res) {
+            resTr.find(".delRes").click(function () {
+                jquery(this).closest("tr").remove()
+            });
         });
 
-        jquery.JST.loadDecorator("ASSIGNMENT_ROW", function(assigTr, taskAssig){
+        jquery.JST.loadDecorator("ASSIGNMENT_ROW", function (assigTr, taskAssig) {
             var resEl = assigTr.find("[name=resourceId]");
             var opt = jquery("<option>");
             resEl.append(opt);
-            for(let i=0; i< taskAssig.task.master.resources.length;i++){
+            for (let i = 0; i < taskAssig.task.master.resources.length; i++) {
                 var res = taskAssig.task.master.resources[i];
                 opt = jquery("<option>");
                 opt.val(res.id).html(res.name);
-                if(taskAssig.assig.resourceId === res.id)
+                if (taskAssig.assig.resourceId === res.id)
                     opt.attr("selected", "true");
                 resEl.append(opt);
             }
             var roleEl = assigTr.find("[name=roleId]");
-            for(let i=0; i< taskAssig.task.master.roles.length;i++){
+            for (let i = 0; i < taskAssig.task.master.roles.length; i++) {
                 var role = taskAssig.task.master.roles[i];
                 var optr = jquery("<option>");
                 optr.val(role.id).html(role.name);
-                if(taskAssig.assig.roleId === role.id)
+                if (taskAssig.assig.roleId === role.id)
                     optr.attr("selected", "true");
                 roleEl.append(optr);
             }
 
-            if(taskAssig.task.master.permissions.canWrite && taskAssig.task.canWrite){
-                assigTr.find(".delAssig").click(function(){
-                    var tr = jquery(this).closest("[assId]").fadeOut(200, function(){jquery(this).remove()});
+            if (taskAssig.task.master.permissions.canWrite && taskAssig.task.canWrite) {
+                assigTr.find(".delAssig").click(function () {
+                    var tr = jquery(this).closest("[assId]").fadeOut(200, function () {
+                        jquery(this).remove()
+                    });
                 });
             }
 
