@@ -5,11 +5,12 @@ import PropTypes from 'prop-types';
 
 import { AppSidebarToggler } from '@coreui/react';
 import logo from '../../img/logo-symbol.png';
-import * as $ from 'jquery';
 import { CHROME_WS_URL, FF_STORE_URL } from '../../_constants';
 
 import './DefaultHeader.scss';
 import { inject } from '../../services/injector-service';
+import YoutubeVideo from '../../dialogs/YoutubeVideo';
+import SkinPicker from './SkinPicker';
 
 const propTypes = {
   children: PropTypes.node,
@@ -20,14 +21,12 @@ const defaultProps = {};
 class DefaultHeader extends PureComponent {
   constructor(props) {
     super(props);
-    inject(this, "AppBrowserService", "CacheService", "SessionService", "UserService");
-    const { jiraUser: { displayName, self, emailAddress, key, avatarUrls } } = this.$session.CurrentUser;
-    this.state = { name: displayName, login: key, profile: self, emailAddress, imageUrl: avatarUrls["24x24"] };
+    inject(this, "AppBrowserService", "CacheService", "SessionService");
+    this.userId = this.$session.CurrentUser.userId;
+    this.state = {};
   }
 
   UNSAFE_componentWillMount() {
-    this.$user.getUsersList().then(users => this.setState({ users }));
-
     this.selectedSkin = this.$cache.get('skin', true) || 'skin-blue';
     this.skinClass = this.selectedSkin.replace('-light', '');
     this.useLightTheme = this.selectedSkin.indexOf('-light') > -1;
@@ -35,77 +34,29 @@ class DefaultHeader extends PureComponent {
     this.storeUrl = this.$jaBrowserExtn.getStoreUrl();
     const subj = encodeURIComponent('Check out "Jira Assistant" in web store');
     const body = encodeURIComponent(`${'Check out "Jira Assistant" extension / add-on for your browser from below url:'
-      + '\n\nChrome users: '}${  CHROME_WS_URL  }?utm_source%3Dgmail#`
-      + `\n\nFirefox users: ${  FF_STORE_URL
+      + '\n\nChrome users: '}${CHROME_WS_URL}?utm_source%3Dgmail#`
+      + `\n\nFirefox users: ${FF_STORE_URL
       //+ '\n\nEdge users: <<Not available yet>>'
       //+ '\n\nSafari users: <<Not available yet>>'
-       }\n\n\n\nThis would help you to track your worklog and generate reports from Jira easily with lots of customizations. `
+      }\n\n\n\nThis would help you to track your worklog and generate reports from Jira easily with lots of customizations. `
       + `Also has lot more features like Google Calendar integration, Jira comment & meeting + worklog notifications, Worklog and custom report generations, etc..`);
     const storeUrl = encodeURIComponent(this.storeUrl);
-    this.gMailShare = `https://mail.google.com/mail/u/0/?view=cm&tf=1&fs=1&su=${  subj  }&body=${  body}`;
-    this.gPlusShare = `https://plus.google.com/share?app=110&url=${  storeUrl}`;
-    this.linkedInShare = `https://www.linkedin.com/shareArticle?mini=true&url=${  storeUrl  }&title=${  subj  }&summary=${  body  }&source=`;
-    this.fackbookShare = `https://www.facebook.com/sharer/sharer.php?u=${  storeUrl}`;
-    this.twitterShare = `https://twitter.com/home?status=${  storeUrl}`;
+    this.gMailShare = `https://mail.google.com/mail/u/0/?view=cm&tf=1&fs=1&su=${subj}&body=${body}`;
+    this.gPlusShare = `https://plus.google.com/share?app=110&url=${storeUrl}`;
+    this.linkedInShare = `https://www.linkedin.com/shareArticle?mini=true&url=${storeUrl}&title=${subj}&summary=${body}&source=`;
+    this.fackbookShare = `https://www.facebook.com/sharer/sharer.php?u=${storeUrl}`;
+    this.twitterShare = `https://twitter.com/home?status=${storeUrl}`;
 
     if (this.$session.CurrentUser.hideDonateMenu) { // When this settings is changed, below class will be removed from body in settings page
-      $('body').addClass('no-donation');
+      document.body.classList.add('no-donation');
     }
   }
 
-  showVideo() {
-    let url = "https://www.youtube.com/embed/f2aBSXzbYuA?rel=0&autoplay=1&showinfo=0&cc_load_policy=1&start=";
-    const route = this.$location.url;
-    let startAt = 0;
-    const endAt = 0;
-    switch (route) {
-      case "/":
-      default:
-        startAt = 74;
-        break;
-      case "/calendar":
-        startAt = 290;
-        break;
-      case "/reports/userdaywise":
-        startAt = 538;
-        break;
-      case "/reports/customgrouped":
-        startAt = 713;
-        break;
-      case "/settings":
-        startAt = 1069;
-        break;
-      case "/feedback":
-        startAt = 1147;
-        break;
-    }
-    url += `${startAt  }&end=${  endAt}`;
-    $('#ifVideoHelp').attr('src', url);
-    this.showVideoHelp = true;
-  }
+  showYoutubeHelp = () => this.setState({ showYoutubeVideo: true });
 
-  onHelpClosed() {
-    this.showVideoHelp = false;
-    $('#ifVideoHelp').attr('src', '#');
-  }
+  hideYoutube = () => this.setState({ showYoutubeVideo: false })
 
-  setSkin(skin, fromChk = false) {
-    const passedSkin = skin;
-    if (this.useLightTheme !== fromChk) {
-      skin += '-light';
-    }
-    if (this.selectedSkin === skin) {
-      return;
-    }
-    const body = $('body');
-    body.removeClass(this.selectedSkin);
-    this.skinClass = passedSkin;
-    this.selectedSkin = skin;
-    this.$cache.set('skin', skin, false, true);
-    body.addClass(this.selectedSkin);
-    $('#divSkins .selected').removeClass('selected');
-    $(`#divSkins .${  this.selectedSkin}`).addClass('selected');
-  }
+  //$('#ifVideoHelp').attr('src', '#');
 
   logout() {
     this.$cache.clear();
@@ -116,8 +67,8 @@ class DefaultHeader extends PureComponent {
   render() {
     const {
       ratingUrl, gMailShare, gPlusShare, linkedInShare, fackbookShare, twitterShare,
-      //REVISIT: props: { children, ...attributes },
-      state: { name, login, profile, emailAddress, imageUrl, users }
+      state: { showYoutubeVideo }
+      //REVISIT: props: { children, ...attributes }
     } = this;
 
     return (
@@ -128,7 +79,9 @@ class DefaultHeader extends PureComponent {
           <span className="navbar-brand-full">Jira Assistant</span>
         </a>
         <AppSidebarToggler className="d-md-down-none" display="lg"><span className="fa fa-bars" /></AppSidebarToggler>
-
+        <a className="btn-donate" href={`${this.userId}/#/contribute`} title="Would you like to contribute / compensate us for the effort we put in development of this tool? Click to know more">
+          <img src="/assets/donate.png" width="145" className="Donate us" alt="Donate us" />
+        </a>
         {/*<Nav className="d-md-down-none" navbar>
           <NavItem className="px-3">
             <NavLink to="/dashboard" className="nav-link" >Dashboard</NavLink>
@@ -141,43 +94,20 @@ class DefaultHeader extends PureComponent {
           </NavItem>
         </Nav>*/}
         <Nav className="ml-auto" navbar>
-
+          <NavItem className="d-md-down-none">
+            <a className="btn btn-warning" href="/old/index.html" onClick={this.showYoutubeHelp}>Switch back to old version</a>
+          </NavItem>
+          <NavItem className="d-md-down-none">
+            <NavLink className="nav-link" onClick={this.showYoutubeHelp}><i className="fa fa-youtube-play"></i></NavLink>
+          </NavItem>
           <UncontrolledDropdown nav direction="down">
-            <DropdownToggle nav tag="div" style={{ cursor: "pointer" }}>
-              <a href={profile} target="_blank" rel="noopener noreferrer" title={emailAddress}>
-                <img src={imageUrl} className="img-avatar" alt={emailAddress} height={35} width={35} />
-              </a> <span>{name} ({login})</span>
+            <DropdownToggle nav>
+              <i className="fa fa-adjust"></i>
             </DropdownToggle>
             <DropdownMenu right>
-              <DropdownItem header tag="div" className="text-center"><strong>Settings</strong></DropdownItem>
-              <DropdownItem><i className="fa fa-user"></i> Profile</DropdownItem>
-              <DropdownItem><i className="fa fa-wrench"></i> Settings</DropdownItem>
-
-              {users && users.length > 0 && <>
-                <DropdownItem header tag="div" className="text-center"><strong>Accounts</strong></DropdownItem>
-
-                {users.map(u => <DropdownItem key={u.id} tag="a" href={`/index.html/#/${  u.id  }/dashboard/1`} title={u.jiraUrl}><i className="fa fa-external-link"></i> {u.email}</DropdownItem>)}
-
-                <DropdownItem tag="a" href="/index.html/#/integrate" title="Integrate with new instance of Jira"><i className="fa fa-plug"></i> Integrate</DropdownItem>
-                {
-                 /*<DropdownItem><i className="fa fa-envelope-o"></i> Messages<Badge color="success">42</Badge></DropdownItem>
-                <DropdownItem><i className="fa fa-tasks"></i> Tasks<Badge color="danger">42</Badge></DropdownItem>
-                <DropdownItem><i className="fa fa-comments"></i> Comments<Badge color="warning">42</Badge></DropdownItem>
-                */}
-              </>
-              }
-
-              <DropdownItem divider />
-              <DropdownItem onClick={e => this.props.onLogout(e)}><i className="fa fa-lock"></i> Logout</DropdownItem>
+              <SkinPicker />
             </DropdownMenu>
           </UncontrolledDropdown>
-
-          <NavItem className="d-md-down-none">
-            <NavLink to="#" className="nav-link"><i className="fa fa-youtube-play"></i></NavLink>
-          </NavItem>
-          <NavItem className="d-md-down-none">
-            <NavLink to="#" className="nav-link"><i className="fa fa-adjust"></i></NavLink>
-          </NavItem>
           <UncontrolledDropdown nav direction="down">
             <DropdownToggle nav>
               <i className="fa fa-share-alt"></i>
@@ -212,6 +142,7 @@ class DefaultHeader extends PureComponent {
             <NavLink to="/feedback" className="nav-link"><i className="fa fa-bug" title="Report a bug or suggest a new feature"></i></NavLink>
           </NavItem>
         </Nav>
+        {showYoutubeVideo && <YoutubeVideo onHide={this.hideYoutube} />}
         {/*<AppAsideToggler className="d-md-down-none"><span className="fa fa-bars" /></AppAsideToggler>*/}
         {/*<AppAsideToggler className="d-lg-none" mobile />*/}
       </React.Fragment >

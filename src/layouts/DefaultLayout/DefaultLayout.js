@@ -7,12 +7,10 @@ import { CustomDialog } from "../../dialogs";
 import "./DefaultLayout.scss";
 
 import {
-  AppAside,
+  //AppAside,
   AppHeader,
   AppSidebar,
   AppSidebarFooter,
-  AppSidebarForm,
-  AppSidebarHeader,
   AppSidebarMinimizer,
   AppSidebarNav2 as AppSidebarNav,
 } from '@coreui/react';
@@ -23,8 +21,9 @@ import routes from '../../routes';
 import { inject } from '../../services/injector-service';
 import ContextMenu from '../../controls/ContextMenu';
 import $ from 'jquery';
+import AsideUserInfo from './AsideUserInfo';
 
-const DefaultAside = React.lazy(() => import('./DefaultAside'));
+//const DefaultAside = React.lazy(() => import('./DefaultAside'));
 const DefaultHeader = React.lazy(() => import('./DefaultHeader'));
 
 class DefaultLayout extends PureComponent {
@@ -59,7 +58,7 @@ class DefaultLayout extends PureComponent {
   }
 
   componentWillUnmount() {
-    this.$dashboard.onChange(() => { });
+    this.$dashboard.onChange(() => { /* Nothing to be done here */ });
   }
 
   getMenus(userId) {
@@ -94,8 +93,7 @@ class DefaultLayout extends PureComponent {
         </AppHeader>
         <div className="app-body">
           <AppSidebar fixed display="lg">
-            <AppSidebarHeader />
-            <AppSidebarForm />
+            <AsideUserInfo />
             <Suspense>
               <AppSidebarNav navConfig={menus} {...this.props} router={router} />
             </Suspense>
@@ -123,11 +121,11 @@ class DefaultLayout extends PureComponent {
               </Suspense>
             </Container>
           </main>
-          <AppAside fixed>
+          {/*<AppAside fixed>
             <Suspense fallback={this.loading()}>
               <DefaultAside />
             </Suspense>
-          </AppAside>
+          </AppAside>*/}
         </div>
         <ContextMenu />
         <CustomDialog />

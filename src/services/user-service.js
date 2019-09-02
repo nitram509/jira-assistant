@@ -22,7 +22,7 @@ export default class UserService {
 
     async getUsersList() {
         const users = await this.$db.users.where("id").notEqual(1).toArray();
-        return users.map(u => { return { id: u.id, email: u.email, jiraUrl: u.jiraUrl }; });
+        return users.map(u => { return { id: u.id, email: u.email, jiraUrl: u.jiraUrl, userId: u.userId }; });
     }
 
     async getUserDetails(userId) {
@@ -59,8 +59,8 @@ export default class UserService {
             endOfDay: currentUser.endOfDay || "19:00",
             notifyWL: currentUser.notifyWL,
             jiraUrl: currentUser.jiraUrl,
-            ticketViewUrl: `${currentUser.jiraUrl.trimEnd('/')  }/browse/`,
-            profileUrl: `${currentUser.jiraUrl  }/secure/ViewProfile.jspa`,
+            ticketViewUrl: `${currentUser.jiraUrl.trimEnd('/')}/browse/`,
+            profileUrl: `${currentUser.jiraUrl}/secure/ViewProfile.jspa`,
             maxHours: currentUser.maxHours || 8,
             meetingTicket: currentUser.meetingTicket,
             team: currentUser.team || [],
@@ -75,16 +75,17 @@ export default class UserService {
             autoUpload: currentUser.autoUpload,
             gIntegration: currentUser.googleIntegration,
             hasGoogleCreds: !!currentUser.dataStore,
-            feedbackUrl: `${feedbackUrl  }&embedded=true`,
+            feedbackUrl: `${feedbackUrl}&embedded=true`,
             dashboards: currentUser.dashboards || [
-{
-                isQuickView: true, layout: 1, name: 'Default', icon: 'fa fa-tachometer',
-                widgets: gridList.map(g => { return { name: g }; })
-            }
-]
+                {
+                    isQuickView: true, layout: 1, name: 'Default', icon: 'fa fa-tachometer',
+                    widgets: gridList.map(g => { return { name: g }; })
+                }
+            ]
         };
         const jiraUrlLower = currentUser.jiraUrl.toLowerCase();
-        if (jiraUrlLower.indexOf('pearson') >= 0 || jiraUrlLower.indexOf('emoneyadv')) {
+
+        if (jiraUrlLower.indexOf('pearson') >= 0 || jiraUrlLower.indexOf('emoneyadv') >= 0) {
             sessionUser.noDonations = true;
             sessionUser.hideDonateMenu = true;
         }

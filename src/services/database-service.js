@@ -3,11 +3,6 @@ import Dexie from 'dexie';
 class DatabaseService extends Dexie {
     static dependencies = ["MessageService"];
 
-    users;
-    savedFilters;
-    //settings: Dexie.Table<ISettings, number>;
-    worklogs;
-
     constructor($message) {
         super("JiraAssist");
         this.$message = $message;
@@ -31,7 +26,7 @@ class DatabaseService extends Dexie {
             if (!user) {
                 this.transaction('rw', this.users, () => {
                     this.users.add({ jiraUrl: 'SystemUser', userId: 'SystemUser', dateCreated: new Date() });
-                }).catch((e) => { console.error(`Unable to initialize the database:-${  e.stack}`); });
+                }).catch((e) => { console.error(`Unable to initialize the database:-${e.stack}`); });
             }
         });
 
