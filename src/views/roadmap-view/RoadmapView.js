@@ -36,9 +36,7 @@ const columns = [
     {key: "id", name: "ID", editable: true, width: 25, resizable: true},
     {key: "code", name: "Code", editable: true, width: 80, resizable: true},
     {key: "name", name: "Name", editable: true, width: 350, resizable: true},
-    {key: "x", name: "*", editable: true, width: 10, resizable: true},
     {key: "start", name: "Start", editable: true, width: 90, resizable: true},
-    {key: "y", name: "*", editable: true, width: 10, resizable: true},
     {key: "end", name: "End", editable: true, width: 90, resizable: true},
     {key: "duration", name: "dur.", editable: true, width: 50, resizable: true},
     {key: "completed", name: "%", editable: true, width: 25, resizable: true},
@@ -85,12 +83,23 @@ class RoadmapView extends PureComponent {
     }
 
     onLoadTickets(event) {
-        const openTickets = this.$jira.getOpenTickets().then((result) => {
-            this.setState( state => {
-               state.rows.add({id:3, code:result[0].key, name:result[0].summary});
-               return state;
-            });
-            console.debug(result);
+        this.$jira.getOpenTickets().then((openTicketList) => {
+            const loadedTicketsAsRowItems = [];
+            for (let i = 0; i < openTicketList.length; i++) {
+                const openTicket = openTicketList[i];
+                loadedTicketsAsRowItems.add({
+                    id: this.state.rows.length,
+                    code: openTicket.key,
+                    name: openTicket.fields.summary,
+                    start: "",
+                    end: "",
+                    duration: "",
+                    completed: "",
+                    dependent: "",
+                    assignee: ""
+                });
+            }
+            this.setState(prevState => ({rows: [...prevState.rows, ...loadedTicketsAsRowItems]}));
         });
     }
 
@@ -100,7 +109,7 @@ class RoadmapView extends PureComponent {
                 <Panel styleclass="p-no-padding" showheader={false}>
                     <h1>Roadmap</h1>
                     <div className="pull-left">
-                        <Button type="success" icon="fa" label="Load Tickets" onClick={(e) => this.onLoadTickets(e)} />
+                        <Button type="success" icon="fa" label="Load Tickets" onClick={(e) => this.onLoadTickets(e)}/>
                     </div>
                     <div id="workSpace" style={{
                         padding: '0px',
@@ -116,7 +125,7 @@ class RoadmapView extends PureComponent {
                                 <ReactDataGrid
                                     columns={columns}
                                     rowGetter={i => this.state.rows[i]}
-                                    rowsCount={3}
+                                    rowsCount={this.state.rows.length}
                                     onGridRowsUpdated={this.onGridRowsUpdated}
                                     enableCellSelect={true}
                                 />
