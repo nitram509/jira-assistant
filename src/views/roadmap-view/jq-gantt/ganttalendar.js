@@ -38,7 +38,9 @@ export class Ganttalendar {
 
         this.taskHeight=20;
         this.resizeZoneWidth=5;
-        this.taskVertOffset = (this.ganttMaster.rowHeight - this.taskHeight) / 2;
+        this.taskVertOffset = 40; // TODO [nitram509] compute the correct offset;; previous value=(this.ganttMaster.rowHeight - this.taskHeight) / 2;
+        this.rowHeight = master.rowHeight;
+        this.rowHeight = 35;
     }
 
     addTask(task) {
@@ -46,7 +48,7 @@ export class Ganttalendar {
     };
 
     reset () {
-        // TODO: what is this.element? needs to be proper initialized?
+        // TODO [nitram509]: what is this.element? needs to be proper initialized?
         // this.element.find("[class*=linkGroup]").remove();
         // this.element.find("[taskid]").remove();
     };
@@ -58,7 +60,7 @@ export class Ganttalendar {
             var ganttHighLighterPosition=this.ganttMaster.editor.element.find(".taskEditRow:visible").index(this.ganttMaster.currentTask.rowElement);
             this.ganttMaster.ganttalendar.element.find(".ganttLinesSVG").removeClass("rowSelected").eq(ganttHighLighterPosition).addClass("rowSelected");
         } else {
-            $(".rowSelected").removeClass("rowSelected"); // todo non c'era
+            $(".rowSelected").removeClass("rowSelected");
         }
     };
 
@@ -156,19 +158,13 @@ export class Ganttalendar {
         }
 
         table.append(tr1).append(tr2);   // removed as on FF there are rounding issues  //.css({width:computedTableWidth});
-
-        var head = table.clone().addClass("ganttFixHead");
-
         table.append(trBody).addClass("ganttTable");
-
-
         var height = self.ganttMaster.editor.element.height();
         table.height(height);
 
         var box = $("<div>");
         box.addClass("ganttalendar unselectable").attr("unselectable", "true").css({position:"relative", width:computedTableWidth});
         box.append(table);
-        box.append(head);
 
         //create the svg
         box.svg({settings:{class:"ganttSVGBox"},
@@ -206,7 +202,7 @@ export class Ganttalendar {
     };
 
 //<%-------------------------------------- GANT TASK GRAPHIC ELEMENT --------------------------------------%>
-    drawTask  (task) {
+    drawTask  (task, rowIndex) {
         
         var self = this;
 
@@ -221,7 +217,7 @@ export class Ganttalendar {
             }
         }
 
-        var taskBox = $(_createTaskSVG(task));
+        var taskBox = $(_createTaskSVG(task, rowIndex));
         task.ganttElement = taskBox;
 
 
@@ -398,7 +394,7 @@ export class Ganttalendar {
 
             var dimensions = {
                 x     : Math.round((task.start - self.startMillis) * self.fx),
-                y     : task.rowElement.position().top + task.rowElement.offsetParent().scrollTop() + self.taskVertOffset,
+                y     : rowIndex * self.rowHeight + self.taskVertOffset,
                 width : Math.max(Math.round((task.end - task.start) * self.fx), 1),
                 height: (self.ganttMaster.showBaselines ? self.taskHeight / 1.3 : self.taskHeight)
             };
@@ -420,7 +416,7 @@ export class Ganttalendar {
                         textStyle["font-weight"]="bold";
                     if (task.progress > 90)
                         textStyle.transform = "translate(-40)";
-                    svg.text(taskSvg, (task.progress > 90 ? 100 : task.progress) + "%", (self.ganttMaster.rowHeight - 5) / 2, (task.progress > 100 ? "!!! " : "") + task.progress + "%", textStyle);
+                    svg.text(taskSvg, (task.progress > 90 ? 100 : task.progress) + "%", (self.rowHeight - 5) / 2, (task.progress > 100 ? "!!! " : "") + task.progress + "%", textStyle);
                 }
             }
 
@@ -492,7 +488,7 @@ export class Ganttalendar {
                  textStyle["font-weight"]="bold";
                  if (baseline.progress > 90)
                  textStyle.transform = "translate(-40)";
-                 svg.text(taskSvg, (baseline.progress > 90 ? 100 : baseline.progress) + "%", (self.ganttMaster.rowHeight - 5) / 2, (baseline.progress > 100 ? "!!! " : "") + baseline.progress + "%", textStyle);
+                 svg.text(taskSvg, (baseline.progress > 90 ? 100 : baseline.progress) + "%", (self.rowHeight - 5) / 2, (baseline.progress > 100 ? "!!! " : "") + baseline.progress + "%", textStyle);
                  }*/
             }
 
@@ -689,7 +685,8 @@ export class Ganttalendar {
     redrawTasks  (drawAll) {
         var self=this;
 
-        self.element.find("table.ganttTable").height(self.ganttMaster.editor.element.height());
+        const editorHeight = 500; // TODO [nitram509]: figure out correct height; previous value=self.ganttMaster.editor.element.height();
+        self.element.find("table.ganttTable").height(editorHeight);
 
         var collapsedDescendant = this.ganttMaster.getCollapsedDescendant();
 
@@ -708,7 +705,7 @@ export class Ganttalendar {
                 continue;
             }
             if (drawAll || (row>=startRowAdd && row<endRowAdd)) {
-                this.drawTask(task);
+                this.drawTask(task, row);
                 self.ganttMaster.firstVisibleTaskIndex=self.ganttMaster.firstVisibleTaskIndex==-1?i:self.ganttMaster.firstVisibleTaskIndex;
                 self.ganttMaster.lastVisibleTaskIndex = i;
             }
@@ -716,9 +713,9 @@ export class Ganttalendar {
         }
 
         //creates rows grid
-        const heightCorrectionValue = 2;
-        for (var i = 40; i <= self.ganttMaster.editor.element.height(); i += (self.ganttMaster.rowHeight + heightCorrectionValue)){
-            self.svg.rect(gridGroup, 0, i, "100%", self.ganttMaster.rowHeight + heightCorrectionValue, {class: "ganttLinesSVG"});
+        const heightCorrectionValue = 0;
+        for (var i = 40; i <= editorHeight; i += (self.rowHeight + heightCorrectionValue)){
+            self.svg.rect(gridGroup, 0, i, "100%", self.rowHeight + heightCorrectionValue, {class: "ganttLinesSVG"});
         }
 
         // drawTodayLine

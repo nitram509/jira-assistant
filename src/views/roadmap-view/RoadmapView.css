@@ -19,3 +19,12 @@ body {
     font-size: 28px;
     margin-left: 10px;
 }
+
+#paneLeft {
+    /*
+        adjust left pane's background to match the header of the data grid
+        TODO [nitram509] find a smarter way to bring task list view and task time view on same vertical offset
+     */
+    background-color: #f9f9f9;
+    padding-top: 6px
+}

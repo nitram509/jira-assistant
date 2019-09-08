@@ -162,7 +162,7 @@ body{
 
 .ganttButtonBar .buttons {
   position: relative;
-  display:inline-block;
+  display: none;
   width: 100%;
   margin-top: 0;
   height: 45px;

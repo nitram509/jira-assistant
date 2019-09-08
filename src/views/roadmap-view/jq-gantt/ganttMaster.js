@@ -1429,7 +1429,7 @@ export class GanttMaster {
 
                     //add missing ones
                 } else if (row >= startRowAdd && row < endRowAdd) {
-                    self.ganttalendar.drawTask(task);
+                    self.ganttalendar.drawTask(task, row);
                 }
 
                 if (row >= firstVisibleRow && row < lastVisibleRow) {
