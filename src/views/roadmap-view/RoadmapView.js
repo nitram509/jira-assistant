@@ -81,17 +81,69 @@ class RoadmapView extends PureComponent {
         this.$jiraRoadmap.getRoadmapTickets().then((ticketList) => {
             const loadedTicketsAsRowItems = [];
             for (let i = 0; i < ticketList.length; i++) {
-                const openTicket = ticketList[i];
+
+                /**
+                 * @typedef {Object} Resolution
+                 * @property {string} self
+                 * @property {string} name
+                 * @property {string} description
+                 * @property {string} id
+                 */
+
+                /**
+                 * @typedef {Object} Assignee
+                 * @property {string} self
+                 * @property {string} name
+                 * @property {string} key
+                 * @property {string} emailAddress
+                 * @property {Object} avatarUrls
+                 * @property {string} displayName
+                 * @property {boolean} active
+                 * @property {string} timeZone
+                 */
+
+                /**
+                 * @typedef {Object} Status
+                 * @property {string} self
+                 * @property {string} id
+                 * @property {string} name
+                 * @property {string} description
+                 * @property {string} iconUrl
+                 * @property {Object} statusCategory
+                 */
+
+                /**
+                 * @typedef {Object} JiraIssueFields
+                 * @property {Assignee} assignee
+                 * @property {string} issuetype
+                 * @property {Resolution} resolution
+                 * @property {Status} status
+                 * @property {string} summary
+                 */
+
+                /**
+                 * @typedef {Object} JiraIssue
+                 * @property {string} id
+                 * @property {string} key
+                 * @property {string} self
+                 * @property {JiraIssueFields} fields
+                 */
+
+                /**
+                 * @type JiraIssue
+                 */
+                const ticket = ticketList[i];
+
                 loadedTicketsAsRowItems.add({
                     id: this.state.rows.length,
-                    code: openTicket.key,
-                    name: openTicket.fields.summary,
+                    code: ticket.key,
+                    name: ticket.fields.summary,
                     start: "" + new Date(),
                     end: "" + new Date(Date.now() + 3600*100*24),
                     duration: "",
-                    completed: "",
+                    completed: ((ticket.fields.status && ticket.fields.status.name === "Done") ? 100 : 0),
                     dependent: "",
-                    assignee: ""
+                    assignee: (ticket.fields.assignee ? ticket.fields.assignee.displayName : "")
                 });
             }
             this.setState(prevState => ({rows: [...prevState.rows, ...loadedTicketsAsRowItems]}));
