@@ -10,6 +10,7 @@ import ConfigService from './config-service';
 import DashboardService from './dashboard-service';
 import DatabaseService from './database-service';
 import JiraService from './jira-service';
+import JiraRoadmapService from './jira-roadmap-service';
 import MessageService from './message-service';
 import ReportService from './report-service';
 import ReportConfigService from './reportconfig-service';
@@ -36,6 +37,7 @@ export default function injectServices() {
     injectable(DashboardService, "DashboardService", "$dashboard");
     injectable(DatabaseService, "DatabaseService", "$db");
     injectable(JiraService, "JiraService", "$jira");
+    injectable(JiraRoadmapService, "JiraRoadmapService", "$jiraRoadmap");
     injectable(MessageService, "MessageService", "$message");
     injectable(ReportService, "ReportService", "$report");
     injectable(ReportConfigService, "ReportConfigService", "$reportConfig");

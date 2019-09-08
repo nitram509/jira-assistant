@@ -55,11 +55,9 @@ class RoadmapView extends PureComponent {
     constructor(props) {
         super(props);
 
-        inject(this, "JiraService");
+        inject(this, "JiraRoadmapService");
 
-        var {match: {params}} = props;
         this.state = {
-            searchText: (params['query'] || "").trim(),
             rows: rows
         };
     }
@@ -75,18 +73,15 @@ class RoadmapView extends PureComponent {
     };
 
     componentDidMount() {
-        if (this.state.searchText.length > 0) {
-            this.search();
-        }
         this.createTemplateDomElements();
-        this.ganttEditor = initGanttMaster();
+        initGanttMaster();
     }
 
     onLoadTickets(event) {
-        this.$jira.getOpenTickets().then((openTicketList) => {
+        this.$jiraRoadmap.getRoadmapTickets().then((ticketList) => {
             const loadedTicketsAsRowItems = [];
-            for (let i = 0; i < openTicketList.length; i++) {
-                const openTicket = openTicketList[i];
+            for (let i = 0; i < ticketList.length; i++) {
+                const openTicket = ticketList[i];
                 loadedTicketsAsRowItems.add({
                     id: this.state.rows.length,
                     code: openTicket.key,
