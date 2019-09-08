@@ -10,7 +10,7 @@ import {
   //AppAside,
   AppHeader,
   AppSidebar,
-  AppSidebarFooter,
+  //AppSidebarFooter,
   AppSidebarMinimizer,
   AppSidebarNav2 as AppSidebarNav,
 } from '@coreui/react';
@@ -38,6 +38,8 @@ class DefaultLayout extends PureComponent {
     const { userId } = this.state;
     this.$dashboard.onChange(() => this.setState({ menus: this.getMenus(userId) }));
     this.initBody();
+
+    this.$cache.set("useNewUI", true, null, true);
   }
 
   initBody() {
@@ -76,7 +78,7 @@ class DefaultLayout extends PureComponent {
 
   loading = () => <div className="animated fadeIn pt-1 text-center">Loading...</div>
 
-  signOut(e) {
+  signOut = (e) => {
     e.preventDefault();
     this.props.history.push('/integrate');
   }
@@ -88,16 +90,16 @@ class DefaultLayout extends PureComponent {
       <div className="app">
         <AppHeader fixed>
           <Suspense fallback={this.loading()}>
-            <DefaultHeader onLogout={e => this.signOut(e)} />
+            <DefaultHeader onLogout={this.signOut} />
           </Suspense>
         </AppHeader>
         <div className="app-body">
           <AppSidebar fixed display="lg">
-            <AsideUserInfo />
+            <AsideUserInfo onLogout={this.signOut} />
             <Suspense>
               <AppSidebarNav navConfig={menus} {...this.props} router={router} />
             </Suspense>
-            <AppSidebarFooter />
+            {/*<AppSidebarFooter />*/}
             <AppSidebarMinimizer />
           </AppSidebar>
           <main className="main">

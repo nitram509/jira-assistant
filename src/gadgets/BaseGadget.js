@@ -6,6 +6,8 @@ import Button from '../controls/Button';
 import classNames from "classnames";
 import { showContextMenu } from '../controls/ContextMenu';
 import "./BaseGadget.scss";
+import { ExportHelper } from '../common/ExportHelper';
+import { ExportFormat } from '../common/Exporter';
 
 export const onDashboardEvent = new EventEmitter();
 
@@ -33,10 +35,16 @@ export class BaseGadget extends PureComponent {
             { label: "Remove", icon: "fa fa-remove", command: () => this.removeGadget() }
         ];
 
+        const exportOpts = this.hideExport ? [] : [
+            { separator: true },
+            { label: "Export to CSV", icon: "fa fa-file-text-o", disabled: !this.exportData, command: () => this.exportData(ExportFormat.CSV) },
+            { label: "Export to Excel", icon: "fa fa-file-excel-o", disabled: !this.exportData, command: () => this.exportData(ExportFormat.XLSX) }
+        ];
+
         return [
-            { label: "Refresh", icon: "fa fa-refresh", disabled: !this.refreshData, command: () => this.refreshData(true) },
-            { label: "Export", icon: "fa fa-download", disabled: !this.exportData, command: () => this.exportData() },
+            { label: "Refresh", icon: "fa fa-refresh", disabled: !this.refreshData || this.state.isLoading, command: () => this.refreshData(true) },
             { label: "Toggle full screen", icon: `fa fa-${isFullScreen ? "compress" : "expand"}`, command: () => this.toggleFullScreen() },
+            ...exportOpts,
             ...gadgetActions
         ];
     }
@@ -143,31 +151,43 @@ export class BaseGadget extends PureComponent {
         return <Button icon="fa fa-refresh" onClick={callback || this.refreshData} title="Refresh data" />;
     }
 
-    exportData = () => {
-        // ToDo: export functionality need to be implemented
+    exportData = (exportFormat) => {
+        const exportHelper = new ExportHelper();
+        exportHelper.fileName = this.title;
+        exportHelper.format = exportFormat || this.exportFormat;
+        exportHelper.element = this.el;
+        exportHelper.export();
     }
 
     getExportButton(disabled) {
         if (this.isGadget) { return null; }
-        disabled = true; //ToDo: need to remove after export functionality is implemented
 
-        return <Button icon="fa fa-download" disabled={disabled} onClick={this.exportData} title="Export to csv" />;
+        return <Button icon="fa fa-download" disabled={disabled} onClick={this.exportData} title={this.exportFormat === ExportFormat.XLSX ? "Export to Excel" : "Export to csv"} />;
     }
 
     getHeader = () => {
         const { title, subTitle, isGadget } = this;
-        return <div onContextMenu={!isGadget ? null : (e) => showContextMenu(e, this.getContextMenu())} onDoubleClick={this.toggleFullScreen}>
+        return <div className="gadget-header" onContextMenu={!isGadget ? null : (e) => showContextMenu(e, this.getContextMenu())} onDoubleClick={this.toggleFullScreen}>
             <i className={`fa ${this.iconClass}`}></i> {title} {subTitle && <span> - {subTitle}</span>}
             <div className="pull-right">
                 {this.renderCustomActions && this.renderCustomActions()}
-                {this.isGadget && <Button icon="fa fa-wrench" onClick={e => showContextMenu(e, this.getContextMenu())} />}
+                {!this.hideMenu && <Button icon="fa fa-wrench" onClick={e => showContextMenu(e, this.getContextMenu())} />}
             </div>
         </div>;
     }
 
     renderBase(childern) {
         const { fullWidth, fullHeight, isLoading, isFullScreen } = this.state;
-        const { isGadget } = this;
+        const {
+            isGadget, props: { tabLayout }
+        } = this;
+
+        if (tabLayout) {
+            return <>
+                {childern}
+                {this.renderFooter && this.renderFooter()}
+            </>;
+        }
 
         const fw = fullWidth || !isGadget;
         const fh = fullHeight || !isGadget;
@@ -181,13 +201,22 @@ export class BaseGadget extends PureComponent {
             "full-screen": isFullScreen
         });
 
-        //const className = !isGadget ? "docked full-width full-height" : `${fullWidth ? 'full-width' : 'half-width'} ${fullHeight ? 'full-height' : 'half-height'}`;
-
         return (<div ref={el => this.el = el} className={className}>
             {isLoading && <div className="data-loader"><i className="fa fa-refresh fa-spin"></i></div>}
             <Panel header={this.getHeader()}>
                 {childern}
                 {this.renderFooter && this.renderFooter()}
+            </Panel>
+        </div>);
+    }
+
+    render() {
+        return (<div ref={el => this.el = el} className="gadget half-width half-height">
+            <Panel header="Gadget Unavailable">
+                <div className="pad-22">
+                    This section contains an un-implemented gadget.
+                    This gadget will be available soon while you try out other features in beta!
+                </div>
             </Panel>
         </div>);
     }

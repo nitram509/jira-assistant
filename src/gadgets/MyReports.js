@@ -6,7 +6,7 @@ import { Button } from 'primereact/button';
 
 class MyReports extends BaseGadget {
     constructor(props) {
-        super(props, 'Saved Query', 'fa-filter');
+        super(props, 'My Reports', 'fa-filter');
         inject(this, "ReportService", "MessageService", "UserUtils");
         this.state.isLoading = true;
     }
@@ -17,7 +17,7 @@ class MyReports extends BaseGadget {
 
     refreshData() {
         this.setState({ isLoading: true });
-        this.$report.getSavedFilters()
+        this.$report.getReportsList()
             .then((result) => {
                 result.forEach(r => {
                     r.displayDate = this.$userutils.formatDateTime(r.dateCreated);

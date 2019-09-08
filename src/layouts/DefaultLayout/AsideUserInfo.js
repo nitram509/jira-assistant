@@ -2,8 +2,12 @@ import React, { PureComponent } from 'react';
 import { inject } from '../../services';
 import { AppSidebarHeader } from '@coreui/react';
 import { UncontrolledDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap';
+import $ from "jquery";
+import { AppContext } from '../../App';
 
 class AsideUserInfo extends PureComponent {
+    static contextType = AppContext;
+
     constructor(props) {
         super(props);
         inject(this, "SessionService", "UserService", "UserUtilsService");
@@ -24,6 +28,12 @@ class AsideUserInfo extends PureComponent {
 
     getJiraServerName(url) {
         return new URL(url).host;
+    }
+
+    switchUser = (e) => {
+        const el = $(e.currentTarget);
+        const userId = parseInt(el.attr("user-id"));
+        this.context.switchUser(userId);
     }
 
     render() {
@@ -47,7 +57,7 @@ class AsideUserInfo extends PureComponent {
                         {users && users.length > 0 && <>
                             <DropdownItem header tag="div" className="text-center"><strong>Switch Accounts</strong></DropdownItem>
 
-                            {users.map(u => <DropdownItem key={u.id} tag="a" href={`/index.html/#/${u.id}/dashboard/1`} title={u.email}>
+                            {users.map(u => <DropdownItem key={u.id} tag="span" user-id={u.id} onClick={this.switchUser} title={u.email}>
                                 <i className="fa fa-external-link icon-extl" />
                                 <div className="inline">
                                     <div>{this.getJiraServerName(u.jiraUrl)}</div>
@@ -55,7 +65,7 @@ class AsideUserInfo extends PureComponent {
                                 </div>
                             </DropdownItem>)}
 
-                            <DropdownItem tag="a" href="/index.html/#/integrate" title="Integrate with new instance of Jira"><i className="fa fa-plug"></i> Integrate</DropdownItem>
+                            <DropdownItem tag="a" href="/index.html#/integrate" title="Integrate with new instance of Jira"><i className="fa fa-plug"></i> Integrate</DropdownItem>
                             {/*<DropdownItem><i className="fa fa-envelope-o"></i> Messages<Badge color="success">42</Badge></DropdownItem>
                             <DropdownItem><i className="fa fa-tasks"></i> Tasks<Badge color="danger">42</Badge></DropdownItem>
                             <DropdownItem><i className="fa fa-comments"></i> Comments<Badge color="warning">42</Badge></DropdownItem>*/}
