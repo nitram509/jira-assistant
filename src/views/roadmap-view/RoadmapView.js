@@ -83,7 +83,7 @@ class RoadmapView extends PureComponent {
                     assignee: (ticket.fields.assignee ? ticket.fields.assignee.displayName : "")
                 });
             }
-            this.setState(prevState => ({rows: [loadedTicketsAsRowItems]}));
+            this.setState(prevState => ({rows: [...prevState.rows, ...loadedTicketsAsRowItems]}));
         });
     }
 
