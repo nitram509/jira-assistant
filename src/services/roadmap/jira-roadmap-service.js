@@ -45,15 +45,15 @@ export default class JiraRoadmapService {
      * @property {string} name
      * @property {string} description
      * @property {string} iconUrl
-     * @property {StatusCategory} statusCategory
+     * @property {?StatusCategory} statusCategory
      */
 
     /**
      * @typedef {Object} JiraIssueFields
-     * @property {Assignee} assignee
+     * @property {?Assignee} assignee
      * @property {string} issuetype
-     * @property {Resolution} resolution
-     * @property {Status} status
+     * @property {?Resolution} resolution
+     * @property {?Status} status
      * @property {string} summary
      */
 

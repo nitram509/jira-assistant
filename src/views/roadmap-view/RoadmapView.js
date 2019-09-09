@@ -71,12 +71,13 @@ class RoadmapView extends PureComponent {
             for (let i = 0; i < ticketList.length; i++) {
                 /** @type JiraIssue */
                 const ticket = ticketList[i];
+                var a = ticket.fields.assignee.name;
                 loadedTicketsAsRowItems.add({
                     id: this.state.rows.length,
                     code: ticket.key,
                     name: ticket.fields.summary,
                     start: "" + new Date(),
-                    end: "" + new Date(Date.now() + 3600*100*24),
+                    end: "" + new Date(Date.now() + 3600*1000*24), // TODO [nitram509] remove fake date
                     duration: "",
                     completed: ((ticket.fields.status && ticket.fields.status.name === "Done") ? 100 : 0),
                     dependent: "",

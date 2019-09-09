@@ -6,7 +6,7 @@ var getDurationInUnits = require('./ganttUtilities').getDurationInUnits;
 var computeEndDate = require('./ganttUtilities').computeEndDate;
 var computeStartDate = require('./ganttUtilities').computeStartDate;
 var durationToString = require('./ganttUtilities').durationToString;
-var showBaselineInfo = require('./ganttUtilities').showBaselineInfo;
+var showBaselineInfo = require('./gantt').showBaselineInfo;
 var millisFromString = require('./libs/date').millisFromString;
 
 export class Ganttalendar {
