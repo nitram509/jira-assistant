@@ -18,10 +18,10 @@ import { inject } from '../../services/injector-service';
 
 // init jQuery and all its helpers
 import jquery from 'jquery';
-import './jquery-ui-1.12.1/jquery-ui'
-import './jq-gantt/libs/jquery/jquery.livequery'
+// import './jquery-ui-1.12.1/jquery-ui'
+// import './jq-gantt/libs/jquery/jquery.livequery'
+// import './jq-gantt/libs/jquery/dateField/jquery.dateField.js'
 import './jq-gantt/libs/jquery/jquery.timers.js'
-import './jq-gantt/libs/jquery/dateField/jquery.dateField.js'
 import './jq-gantt/libs/jquery/JST/jquery.JST.js'
 import './jq-gantt/libs/jquery/svg/jquery.svg.js'
 import './jq-gantt/libs/jquery/svg/jquery.svgdom.1.8.js'
@@ -39,15 +39,9 @@ const columns = [
     {key: "start", name: "Start", editable: true, width: 90, resizable: true},
     {key: "end", name: "End", editable: true, width: 90, resizable: true},
     {key: "duration", name: "dur.", editable: true, width: 50, resizable: true},
-    {key: "completed", name: "%", editable: true, width: 25, resizable: true},
+    {key: "completed", name: "%", editable: true, width: 50, resizable: true},
     {key: "dependent", name: "depe.", editable: true, width: 50, resizable: true},
     {key: "assignee", name: "Assignee", editable: true, width: 300, resizable: true}
-];
-
-const rows = [
-    {id: 0, name: "Task 1", completed: 20},
-    {id: 1, name: "Task 2", completed: 40},
-    {id: 2, name: "Task 3", completed: 60}
 ];
 
 class RoadmapView extends PureComponent {
@@ -58,7 +52,7 @@ class RoadmapView extends PureComponent {
         inject(this, "JiraRoadmapService");
 
         this.state = {
-            rows: rows
+            rows: []
         };
     }
 
@@ -81,59 +75,8 @@ class RoadmapView extends PureComponent {
         this.$jiraRoadmap.getRoadmapTickets().then((ticketList) => {
             const loadedTicketsAsRowItems = [];
             for (let i = 0; i < ticketList.length; i++) {
-
-                /**
-                 * @typedef {Object} Resolution
-                 * @property {string} self
-                 * @property {string} name
-                 * @property {string} description
-                 * @property {string} id
-                 */
-
-                /**
-                 * @typedef {Object} Assignee
-                 * @property {string} self
-                 * @property {string} name
-                 * @property {string} key
-                 * @property {string} emailAddress
-                 * @property {Object} avatarUrls
-                 * @property {string} displayName
-                 * @property {boolean} active
-                 * @property {string} timeZone
-                 */
-
-                /**
-                 * @typedef {Object} Status
-                 * @property {string} self
-                 * @property {string} id
-                 * @property {string} name
-                 * @property {string} description
-                 * @property {string} iconUrl
-                 * @property {Object} statusCategory
-                 */
-
-                /**
-                 * @typedef {Object} JiraIssueFields
-                 * @property {Assignee} assignee
-                 * @property {string} issuetype
-                 * @property {Resolution} resolution
-                 * @property {Status} status
-                 * @property {string} summary
-                 */
-
-                /**
-                 * @typedef {Object} JiraIssue
-                 * @property {string} id
-                 * @property {string} key
-                 * @property {string} self
-                 * @property {JiraIssueFields} fields
-                 */
-
-                /**
-                 * @type JiraIssue
-                 */
+                /** @type JiraIssue */
                 const ticket = ticketList[i];
-
                 loadedTicketsAsRowItems.add({
                     id: this.state.rows.length,
                     code: ticket.key,
