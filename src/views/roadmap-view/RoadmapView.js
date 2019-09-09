@@ -71,7 +71,6 @@ class RoadmapView extends PureComponent {
             for (let i = 0; i < ticketList.length; i++) {
                 /** @type JiraIssue */
                 const ticket = ticketList[i];
-                var a = ticket.fields.assignee.name;
                 loadedTicketsAsRowItems.add({
                     id: this.state.rows.length,
                     code: ticket.key,
