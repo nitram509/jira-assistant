@@ -10,7 +10,7 @@ import ConfigService from './config-service';
 import DashboardService from './dashboard-service';
 import DatabaseService from './database-service';
 import JiraService from './jira-service';
-import JiraRoadmapService from './jira-roadmap-service';
+import JiraRoadmapService from './roadmap/jira-roadmap-service';
 import MessageService from './message-service';
 import ReportService from './report-service';
 import ReportConfigService from './reportconfig-service';
