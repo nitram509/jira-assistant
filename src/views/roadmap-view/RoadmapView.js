@@ -11,24 +11,18 @@ import { initGanttMaster } from "./jq-gantt/gantt";
 import './RoadmapView.css';
 
 import './jq-gantt/platform.css'
-import './jq-gantt/libs/jquery/dateField/jquery.dateField.css'
 import './jq-gantt/gantt.css'
 
 import { inject } from '../../services/injector-service';
 
 // init jQuery and all its helpers
 import jquery from 'jquery';
-// import './jquery-ui-1.12.1/jquery-ui'
-// import './jq-gantt/libs/jquery/jquery.livequery'
-// import './jq-gantt/libs/jquery/dateField/jquery.dateField.js'
 import './jq-gantt/libs/jquery/jquery.timers.js'
 import './jq-gantt/libs/jquery/JST/jquery.JST.js'
 import './jq-gantt/libs/jquery/svg/jquery.svg.js'
 import './jq-gantt/libs/jquery/svg/jquery.svgdom.1.8.js'
 import './jq-gantt/ganttDrawerSVG.js'
 import Button from "../../controls/Button";
-import { showContextMenu } from "../../controls/ContextMenu";
-import sessionBasedRoute from "../../routes";
 
 window.$ = window.jQuery = jquery;
 
