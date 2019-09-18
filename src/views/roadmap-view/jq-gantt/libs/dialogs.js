@@ -25,120 +25,9 @@ var alertOnUnload = require('./forms').alertOnUnload;
 
 var confirm = undefined; // bad hack to make the compiler happy
 
-function centerPopup(url, target, w, h, scroll, resiz) {
-	var winl = (window.screen.width - w) / 2;
-	var wint = (window.screen.height - h) / 2;
-	var winprops = 'height=' + h + ',width=' + w + ',top=' + wint + ',left=' + winl + ',scrollbars=' + scroll + ',resizable=' + resiz + ', toolbars=false, status=false, menubar=false';
-	var win = window.open(url, target, winprops);
-	if (!win)
-		alert("A popup blocker was detected: please allow them for this application (check out the upper part of the browser window).");
-	if (parseInt(navigator.appVersion) >= 4) {
-		win.window.focus();
-	}
-}
-
-function openCenteredWindow(url, target, winprops) {
-	var prop_array = winprops.split(",");
-	var i = 0;
-	var w = 800;
-	var h = 600;
-	if (winprops && winprops != '') {
-		while (i < prop_array.length) {
-			if (prop_array[i].indexOf('width') > -1) {
-				var s = prop_array[i].substring(prop_array[i].indexOf('=') + 1);
-				var w = parseInt(s);
-			} else if (prop_array[i].indexOf('height') > -1) {
-				var s = prop_array[i].substring(prop_array[i].indexOf('=') + 1);
-				var h = parseInt(s);
-			}
-			i += 1;
-		}
-		var winl = (window.screen.width - w) / 2;
-		var wint = (window.screen.height - h) / 2;
-		winprops = winprops + ",top=" + wint + ",left=" + winl;
-	}
-	var win = window.open(url, target, winprops);
-	if (!win)
-		alert("A popup blocker was detected: please allow them for this application (check out the upper part of the browser window).");
-	if (parseInt(navigator.appVersion) >= 4) {
-		win.window.focus();
-	}
-}
-
-function showFeedbackMessage(typeOrObject, message, title, autoCloseTime) {
-
-	if(!autoCloseTime)
-		autoCloseTime = 0;
-
-	
-	var place = $("#__FEEDBACKMESSAGEPLACE");
-	var mess;
-	if (typeof(typeOrObject)=="object" )
-		mess=typeOrObject;
-	else
-		mess = {type:typeOrObject, message:message,title:title};
-	//if exists append error message
-	var etm = $(".FFC_"+mess.type+":visible ._errorTemplateMessage");
-	if(etm.length>0){
-		etm.append("<hr>"+(mess.title?"<b>"+mess.title+"</b><br>":"")+mess.message+"<br>");
-	}else{
-		etm = $.JST.createFromTemplate(mess, "errorTemplate");
-		place.append(etm);
-		place.fadeIn();
-	}
-
-	if(autoCloseTime >0)
-		setTimeout(function(){
-			etm.fadeOut();
-		},autoCloseTime);
-
-		$(".FFC_OK").stopTime("ffchide").oneTime(1500, "ffchide",function () {$(this).fadeOut(400,function(){$(this)})});
-		$(".FFC_WARNING").stopTime("ffchide").oneTime(75000, "ffchide",function () {$(this).fadeOut(400,function(){$(this)})});
-		$(".FFC_ERROR").stopTime("ffchide").oneTime(10000, "ffchide",function () {$(this).fadeOut(400,function(){$(this)})});
-}
-
-function showFeedbackMessageInDiv(type, message, divId) {
-	var place = $("#" + divId);
-	var mess = {type:type, message:message};
-	place.prepend($.JST.createFromTemplate(mess, "errorTemplate"));
-	place.fadeIn();
-	$("body").oneTime(1200, function () {
-		$(".FFC_OK").fadeOut();
-	});
-}
-function hideFeedbackMessages() {
-  $("#__FEEDBACKMESSAGEPLACE").empty();
-}
-
-
-function submitInBlack(formId, actionHref, w, h) {
-
-	if (!w)
-		w = $(window).width() - 100;
-	if (!h)
-		h = $(window).height() - 50;
-
-	openBlackPopup('', w + "px", h + "px", null, formId + "_ifr");
-	var form = $("#" + formId);
-	var oldAction = form.prop("action");
-	var oldTarget = form.prop("target");
-	form.prop("action", actionHref);
-	form.prop("target", formId + "_ifr");
-	$(window).data("openerForm", form);
-	form.submit();
-	form.prop("action", oldAction);
-	if (oldTarget)
-		form.prop("target", oldTarget);
-	else
-		form.removeAttr("target");
-}
-
-
 var __popups = [];
 export function createModalPopup(width, height, onCloseCallBack, cssClass, element, popupOpener) {
   
-
-
   // if (typeof(disableUploadize)=="function")
   //   disableUploadize();
 
@@ -226,19 +115,6 @@ export function createModalPopup(width, height, onCloseCallBack, cssClass, eleme
 			});
 		}
 
-/*
-		if(isInIframe) {
-			internalDiv.css({marginTop: -1000 });
-			el.show();
-			internalDiv.animate({marginTop: 0}, (time * 2), callback);
-		}else{
-			internalDiv.css({opacity:0, top: -500}).show();
-			el.fadeIn(time, function(){
-				internalDiv.animate({top: 0, opacity:1}, time, callback);
-			});
-		}
-*/
-
 		return this;
 	};
 
@@ -270,11 +146,6 @@ export function createModalPopup(width, height, onCloseCallBack, cssClass, eleme
 	bg.on("close", function () {
 		var callBackdata = $(this).data("callBackdata");
     var ndo=bg;
-
-    // if (typeof (enableUploadize)=="function")
-	// 	  enableUploadize();
-
-    
 
 		var alertMsg;
     var ifr=bg.find("iframe");
@@ -325,38 +196,6 @@ export function createModalPopup(width, height, onCloseCallBack, cssClass, eleme
   return internalDiv;
 }
 
-function changeModalSize(w,h){
-	var newDim = {};
-	if(w)
-		newDim.width = w;
-	if(h)
-		newDim.minHeight = h;
-
-	var isInIframe = isIframe();
-	var popUp = isInIframe ? window.parent.$(".bwinPopupd") : $(".bwinPopupd");
-
-	if(popUp.length)
-		popUp.delay(300).animate(newDim, 200);
-}
-
-function openBlackPopup(url, width, height, onCloseCallBack, iframeId, cssClass) {
-
-	if (!iframeId)
-		iframeId = "bwinPopupIframe";
-
-	//add black only if not already in blackpupup
-	var color= cssClass ? cssClass + " iframe" : "iframe";
-
-	var ndo = window.top.createModalPopup(width, height, onCloseCallBack, color,null,window);
-
-  //ndo.closest(".modalPopup ").data("__opener",window);  // si deposita il vero opener
-
-  var isInIframe = isIframe();
-
-	ndo.append("<div class='bwinPopupIframe_wrapper'><iframe id='" + iframeId + "' name='" + iframeId + "' frameborder='0'></iframe></div>");
-	ndo.find("iframe:first").prop("src", url).css({width:"100%", height:"100%", backgroundColor: isInIframe ? '#F9F9F9' : '#FFFFFF'});
-}
-
 function getBlackPopup() {
 	var ret=$([]);
 	if (__popups.length>0) {
@@ -370,10 +209,6 @@ function getBlackPopup() {
 }
 
 
-function getBlackPopupOpener(){
-  return getBlackPopup().data("__opener")
-}
-
 export function closeBlackPopup(callBackdata) {
 	
 	var bp = getBlackPopup();
@@ -381,11 +216,6 @@ export function closeBlackPopup(callBackdata) {
 	if (callBackdata)
 		bp.data("callBackdata",callBackdata);
 	bp.trigger("close");
-}
-
-function openPopUp(el,width,height){
-	var popup=createModalPopup(width,height);
-	popup.append(el.clone().show());
 }
 
 //returns a jquery object where to write content
@@ -403,49 +233,3 @@ function isIframe() {
 	return isIframe;
 };
 
-
-function openBulkAction(bulkDivId){
-	var popup=createModalPopup(500,300);
-	popup.append($("#"+bulkDivId).clone().show());
-}
-
-
-function refreshBulk(el) {
-	
-
-	if (el.is(":checked"))
-		el.closest("tr").addClass("selected");
-	else
-		el.closest("tr").removeClass("selected");
-
-	var table=el.closest(".dataTable");
-	if (table.find(".selected :checked").length > 0) {
-
-		$("#bulkOp #bulkRowSel").html(table.find("tbody > tr.selected").length + "/" + table.children("tbody").children("tr").length);
-
-		var bukOpt = $("#bulkOp").clone().addClass("bulkOpClone");
-		bukOpt.fadeIn(200, function(){
-			$("#bulkPlace").html(bukOpt);
-			$.tableHF.refreshTfoot();
-		});
-
-	} else {
-		$(".bulkOpClone").fadeOut(200, function(){
-			$.tableHF.refreshTfoot();
-		});
-	}
-}
-
-function selUnselAll(el){
-	//var bulkCheckbox = $("#multi td [type='checkbox']");
-	var bulkCheckbox = el.closest(".dataTable").find("[type='checkbox']");
-	if (el.is(":checked")){
-		bulkCheckbox.prop("checked", true);
-		bulkCheckbox.closest("tr").addClass("selected");
-	} else {
-		bulkCheckbox.prop("checked", false);
-		bulkCheckbox.closest("tr").removeClass("selected");
-	}
-
-	refreshBulk(el);
-}
