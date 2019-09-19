@@ -159,7 +159,7 @@ export class Ganttalendar {
 
         table.append(tr1).append(tr2);   // removed as on FF there are rounding issues  //.css({width:computedTableWidth});
         table.append(trBody).addClass("ganttTable");
-        var height = self.ganttMaster.editor.element.height();
+        var height = 40;// TODO [nitram509] previous value was = self.ganttMaster.editor.element.height();
         table.height(height);
 
         var box = $("<div>");

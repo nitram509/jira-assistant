@@ -21,8 +21,6 @@
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import { GridEditor } from './ganttGridEditor'
-import { splittify } from './ganttUtilities'
 import { Ganttalendar } from "./ganttalendar";
 
 import $ from "jquery"
@@ -119,8 +117,13 @@ export class GanttMaster {
         //load templates
         $("#gantEditorTemplates").loadTemplates().remove();
 
-        //create editor
-        this.editor = new GridEditor(this);
+        //create editor ToDo [nitram509] this is just a mocked out instance, can be rtemoved
+        this.editor = {
+            reset : function () {},
+            addTask : function (task, row) {},
+            redraw : function () {},
+            refreshExpandStatus : function () {},
+        };
 
         //create ganttalendar
         this.ganttalendar = new Ganttalendar(new Date().getTime() - 3600000 * 24 * 2, new Date().getTime() + 3600000 * 24 * 5, this, place.width() * .6);
@@ -456,7 +459,7 @@ export class GanttMaster {
         // re-select old row if tasks is not empty
         if (this.tasks && this.tasks.length > 0) {
             selectedRow = selectedRow ? selectedRow : 0;
-            this.tasks[selectedRow].rowElement.click();
+            // TODO [nitram509] select first line; this.tasks[selectedRow].rowElement.click();
         }
     };
 

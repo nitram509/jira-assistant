@@ -66,7 +66,7 @@ class RoadmapView extends PureComponent {
     }
 
     onLoadTickets(event) {
-        this.$jiraRoadmap.getRoadmapTickets().then((ticketList) => {
+        this.$jiraRoadmap.getRoadmapTickets().then((/** @type JiraIssue[] */ ticketList) => {
             const loadedTicketsAsRowItems = [];
             for (let i = 0; i < ticketList.length; i++) {
                 /** @type JiraIssue */
