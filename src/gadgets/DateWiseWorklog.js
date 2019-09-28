@@ -4,6 +4,7 @@ import { inject } from '../services';
 import moment from 'moment';
 import { DatePicker } from '../controls';
 import { ScrollableTable, THead, Column, TBody, NoDataRow } from '../components/ScrollableTable';
+import { showContextMenu } from '../controls/ContextMenu';
 
 class DateWiseWorklog extends BaseGadget {
     constructor(props) {
@@ -19,7 +20,7 @@ class DateWiseWorklog extends BaseGadget {
         this.refreshData();
     }
 
-    refreshData() {
+    refreshData = () => {
         const selDate = this.settings.dateRange;
         if (!selDate || !selDate.fromDate) {
             return;
@@ -38,9 +39,9 @@ class DateWiseWorklog extends BaseGadget {
         return this.$userutils.getWorklogUrl(ticketNo, worklogId);
     }
 
-    showContext($event, b, menu) {
+    showContext(e, b) {
         this.selectedDay = b;
-        menu.toggle($event);
+        showContextMenu(e, this.contextMenu);
     }
 
     dateSelected(date) {
@@ -53,20 +54,18 @@ class DateWiseWorklog extends BaseGadget {
         }
     }
 
-    getRowStatus(d, index) {
-        return d.rowClass;
-    }
-
     uploadWorklog() {
         const toUpload = this.selectedDay.ticketList.filter(t => !t.worklogId).map(t => t.id);
         if (toUpload.length === 0) {
             return;
         }
+
         this.setState({ isLoading: true });
+
         this.$worklog.uploadWorklogs(toUpload).then(() => {
             this.refreshData();
             super.performAction(GadgetActionType.WorklogModified);
-        }, (err) => { this.isLoading = false; });
+        }, (err) => { this.setState({ isLoading: false }); });
     }
 
     addWorklog() {
@@ -110,7 +109,7 @@ class DateWiseWorklog extends BaseGadget {
                 </THead>
                 <TBody>
                     {(b) => {
-                        return <tr key={b.dateLogged} onContextMenu={(e) => this.showContext(e, b)}>
+                        return <tr key={b.dateLogged} onContextMenu={(e) => this.showContext(e, b)} className={b.rowClass}>
                             <td>{this.$userutils.formatDate(b.dateLogged)}</td>
                             <td>{this.$utils.formatTs(b.totalHours)}</td>
                             <td>{this.$utils.formatTs(b.uploaded)}</td>
@@ -119,10 +118,10 @@ class DateWiseWorklog extends BaseGadget {
                                 <ul className="tags">
                                     {b.ticketList.map((ld, x) => <li key={x}>
                                         {ld.worklogId && <a className="link badge badge-pill skin-bg-font" href={this.getWorklogUrl(ld.ticketNo, ld.worklogId)}
-                                            target="_blank" rel="noopener noreferrer" title={ld.comments}>
+                                            target="_blank" rel="noopener noreferrer" title={ld.comment}>
                                             <span className="fa fa-clock-o" /> {ld.ticketNo}: {ld.uploaded}
                                         </a>}
-                                        {!ld.worklogId && <span className="link badge badge-pill skin-bg-font" onClick={() => this.editWorklog(ld.id)} title={ld.comments}>
+                                        {!ld.worklogId && <span className="link badge badge-pill skin-bg-font" onClick={() => this.editWorklog(ld.id)} title={ld.comment}>
                                             <span className="fa fa-clock-o" /> {ld.ticketNo}: {ld.uploaded}
                                         </span>}
                                     </li>)}

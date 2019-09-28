@@ -12,6 +12,7 @@ import DatabaseService from './database-service';
 import JiraService from './jira-service';
 import JiraRoadmapService from './roadmap/jira-roadmap-service';
 import MessageService from './message-service';
+import QueueService from './queue-service';
 import ReportService from './report-service';
 import ReportConfigService from './reportconfig-service';
 import SessionService from './session-service';
@@ -39,6 +40,7 @@ export default function injectServices() {
     injectable(JiraService, "JiraService", "$jira");
     injectable(JiraRoadmapService, "JiraRoadmapService", "$jiraRoadmap");
     injectable(MessageService, "MessageService", "$message");
+    injectable(QueueService, "QueueService", "$q", { isSingleton: false });
     injectable(ReportService, "ReportService", "$report");
     injectable(ReportConfigService, "ReportConfigService", "$reportConfig");
     injectable(SessionService, "SessionService", "$session");

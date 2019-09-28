@@ -43,15 +43,6 @@ class Dashboard extends PureComponent {
         return { dashboardIndex: index, currentBoard, isTabView: this.isQuickView || currentBoard.isTabView };
     }
 
-    // ToDo: need to be removed
-    showGadgets() {
-        this.$report.getReportsList()
-            .then((result) => {
-                this.savedQueries = result;
-                this.setState({ showGadgetsPopup: true });
-            });
-    }
-
     addGadget = (gadgetName, settings) => {
         let { currentBoard } = this.state;
         currentBoard = { ...currentBoard };
@@ -191,40 +182,6 @@ class Dashboard extends PureComponent {
         else {
             return gHtml;
         }
-
-        /*switch (name) {
-            case "myOpenTickets":
-                return <MyOpenTickets {...props} />;
-
-            case "myBookmarks":
-            case "bookmarksList":
-                return <MyBookmarks {...props} />;
-
-            case "dateWiseWorklog":
-            case "dtWiseWL":
-                return <DateWiseWorklog {...props} />;
-
-            case "pendingWorklog":
-            case "pendingWL":
-                return <PendingWorklog {...props} />;
-
-            case "ticketWiseWorklog":
-                return <TicketWiseWorklog {...props} />;
-
-            case "myFilters":
-                return <MyReports {...props} />;
-
-            case "agendaDay":
-                return <Calendar {...props} viewMode="timeGridDay" />;
-
-            case "agendaWeek":
-                return <Calendar {...props} viewMode="timeGridWeek" />;
-
-            default:
-
-                break;
-        }*/
-
     }
 
     getGadgets(widgets) {
@@ -240,16 +197,18 @@ class Dashboard extends PureComponent {
         }
     }
 
-    onShowGadgets = () => {
-        this.setState({ showGadgetDialog: true });
-    }
+    onShowGadgets = () => this.setState({ showGadgetDialog: true })
 
     hideGadgetDialog = () => {
         this.setState({ showGadgetDialog: false });
         this.saveDashboardInfo();
     }
 
-    worklogAdded = (e) => this.hideWorklog();
+    worklogAdded = (e) => {
+        this.emitToChildren(e);
+        this.hideWorklog();
+    }
+
     hideWorklog = () => this.setState({ showWorklogPopup: false });
 
     render() {

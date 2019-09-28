@@ -4,6 +4,7 @@ import { ScrollableTable, THead, TBody, Column, NoDataRow } from '../components/
 import { inject } from '../services/injector-service';
 import { showContextMenu } from '../controls/ContextMenu';
 import { Button, Checkbox } from '../controls';
+import Dialog from '../dialogs';
 
 class PendingWorklog extends BaseGadget {
     //dateStarted
@@ -27,7 +28,7 @@ class PendingWorklog extends BaseGadget {
         this.refreshData();
     }
 
-    refreshData() {
+    refreshData = () => {
         this.setState({ isLoading: true });
 
         return this.$worklog.getPendingWorklogs()
@@ -35,6 +36,7 @@ class PendingWorklog extends BaseGadget {
                 const { selAllChk } = this.state;
 
                 worklogs.forEach((w) => {
+                    w.ticketUrl = this.$userutils.getTicketUrl(w.ticketNo);
                     w.rowClass = this.$utils.getRowStatus(w);
                     w.displayDate = this.$userutils.formatDateTime(w.dateStarted);
                     w.selected = selAllChk;
@@ -57,12 +59,6 @@ class PendingWorklog extends BaseGadget {
         worklogs.forEach(wl => wl.selected = selAllChk);
         this.setState({ worklogs: [...worklogs], selAllChk });
     }
-
-    getRowStatus(d, index) {
-        return d.rowClass;
-    }
-
-    getTicketUrl(ticketNo) { return this.$userutils.getTicketUrl(ticketNo); }
 
     showContext(e, b) {
         this.selectedItem = b;
@@ -101,10 +97,14 @@ class PendingWorklog extends BaseGadget {
             this.$message.info("Select the worklogs to be deleted!");
             return;
         }
-        this.isLoading = true;
-        this.$worklog.deleteWorklogs(ids).then((result) => {
-            this.refreshData();
-            this.performAction(GadgetActionType.DeletedWorklog);
+
+        Dialog.confirmDelete("Are you sure to delete the selected worklog(s)?", "Confirm delete worklog(s)").then(() => {
+            this.setState({ isLoading: true });
+
+            this.$worklog.deleteWorklogs(ids).then((result) => {
+                this.refreshData();
+                this.performAction(GadgetActionType.DeletedWorklog);
+            });
         });
     }
 
@@ -149,12 +149,12 @@ class PendingWorklog extends BaseGadget {
                 </THead>
                 <TBody>
                     {b => {
-                        return <tr key={b.id} onContextMenu={(e) => this.showContext(e, b)}>
+                        return <tr key={b.id} onContextMenu={(e) => this.showContext(e, b)} className={b.rowClass}>
                             <td className="text-center">
                                 {b.selected && <Checkbox checked={true} onChange={() => this.selectRowItem(b)} />}
                                 {!b.selected && <i className="fa fa-ellipsis-v" onClick={(e) => this.showContext(e, b)}></i>}
                             </td>
-                            <td><a href={b.ticketNo} rel="noopener noreferrer" className="link strike" target="_blank">{b.ticketNo}</a></td>
+                            <td><a href={b.ticketUrl} rel="noopener noreferrer" className="link strike" target="_blank">{b.ticketNo}</a></td>
                             <td>{b.summary}</td>
                             <td>{b.displayDate}</td>
                             <td>{b.timeSpent}</td>

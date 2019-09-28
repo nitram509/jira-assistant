@@ -6,11 +6,12 @@ import { showContextMenu } from '../controls/ContextMenu';
 import { inject } from '../services/injector-service';
 import { Button, Checkbox } from '../controls';
 import AddBookmark from '../dialogs/AddBookmark';
+import Dialog from '../dialogs';
 
 class MyBookmarks extends BaseGadget {
     constructor(props) {
         super(props, 'My Bookmarks', 'fa-bookmark');
-        inject(this, "JiraService", "BookmarkService", "UtilsService", "MessageService");
+        inject(this, "JiraService", "BookmarkService", "UtilsService", "UserUtilsService", "MessageService");
 
         this.contextMenu = [
             { label: "Select Bookmark", icon: "fa fa-check-square-o", command: () => this.selectTicket(this.selectedTicket) },
@@ -41,6 +42,7 @@ class MyBookmarks extends BaseGadget {
                 const { selAllChk } = this.state;
 
                 result.forEach(b => {
+                    b.ticketUrl = this.$userutils.getTicketUrl(b.ticketNo);
                     b.selected = selAllChk;
                     b.rowClass = this.$utils.getRowStatus(b);
                 });
@@ -52,10 +54,6 @@ class MyBookmarks extends BaseGadget {
     showContext($event, b) {
         this.selectedTicket = b;
         showContextMenu($event, this.contextMenu);
-    }
-
-    getRowStatus(d, index) {
-        return d.rowClass;
     }
 
     selectAll = (selAllChk) => {
@@ -78,9 +76,12 @@ class MyBookmarks extends BaseGadget {
             return;
         }
 
-        this.setState({ isLoading: true });
-        this.$bookmark.removeBookmark(ids).then((result) => {
-            this.setState({ bookmarksList: result, isLoading: false });
+        Dialog.confirmDelete("Are you sure to delete the selected bookmark(s)?", "Confirm delete bookmark(s)").then(() => {
+            this.setState({ isLoading: true });
+
+            this.$bookmark.removeBookmark(ids).then((result) => {
+                this.setState({ bookmarksList: result, isLoading: false });
+            });
         });
     }
 
@@ -131,13 +132,13 @@ class MyBookmarks extends BaseGadget {
                 </THead>
                 <TBody>
                     {(b, i) => {
-                        return <tr key={b.ticketNo} onContextMenu={(e) => this.showContext(e, b)}>
+                        return <tr key={b.ticketNo} onContextMenu={(e) => this.showContext(e, b)} className={b.rowClass}>
                             <td className="text-center">
                                 {b.selected && <Checkbox checked={true} onChange={() => this.selectTicket(b)} />}
                                 {!b.selected && <i className="fa fa-ellipsis-v" onClick={(e) => this.showContext(e, b)}></i>}
                             </td>
                             <td>
-                                <a href={b.ticketNo} rel="noopener noreferrer" className="link strike" target="_blank">{b.ticketNo}</a>
+                                <a href={b.ticketUrl} rel="noopener noreferrer" className="link strike" target="_blank">{b.ticketNo}</a>
                             </td>
                             <td>{b.issuetypeIcon && <img className="img-x16" src={b.issuetypeIcon} alt={b.issuetype} />}{b.issuetype}</td>
                             <td>{b.summary}</td>

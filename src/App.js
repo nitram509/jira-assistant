@@ -46,7 +46,10 @@ class App extends PureComponent {
       let url = document.location.hash.substring(2);
       url = url.substring(url.indexOf("/"));
       url = `/${userId}${url}`;
-      this.authenticateUser(url);
+      this.authenticateUser(url, true);
+    },
+    navigate: (url, userbased) => {
+      this.props.history.push(userbased ? `/${this.$session.userId}${url}` : url);
     }
   }
 
@@ -60,11 +63,21 @@ class App extends PureComponent {
     this.authenticateUser(this.props.location.pathname);
   }
 
-  authenticateUser(pathname) {
+  authenticateUser(pathname, forceNavigate) {
     const parts = pathname.split("/");
     let userId = parseInt(parts[1]);
     if (!userId || !isNumber(userId)) {
       userId = null;
+    }
+
+    // For existing users who uses old UI have the menu saved as /dashboard
+    if (pathname.endsWith("/dashboard")) {
+      forceNavigate = true;
+      pathname += "/0";
+    }
+
+    if (pathname.startsWith("/dashboard")) {
+      forceNavigate = true;
     }
 
     if (parts[1] === "integrate") {
@@ -74,6 +87,12 @@ class App extends PureComponent {
         if (result) {
           if (!pathname || pathname === "/") {
             this.props.history.push(`/${this.$session.userId}/dashboard/0`);
+          }
+          else if (forceNavigate) {
+            if (pathname.startsWith("/dashboard")) {
+              pathname = `/${this.$session.userId}${pathname}`;
+            }
+            this.props.history.push(pathname);
           }
           else if (!userId) {
             this.props.history.push(`/${this.$session.userId}${pathname}`);

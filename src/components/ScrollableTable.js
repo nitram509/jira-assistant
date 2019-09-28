@@ -38,10 +38,12 @@ export class ScrollableTable extends PureComponent {
 
             if (sortBy) {
                 let { dataset } = this.state;
-                dataset = dataset.sortBy(sortBy, isDesc);
+                if (dataset) {
+                    dataset = dataset.sortBy(sortBy, isDesc);
 
-                this.setState({ dataset, sortBy, isDesc });
-                this.eventEmitter.emit(sortChangedEvent, sortBy, isDesc);
+                    this.setState({ dataset, sortBy, isDesc });
+                    this.eventEmitter.emit(sortChangedEvent, sortBy, isDesc);
+                }
             }
             else {
                 return this.state.sortBy;
@@ -259,18 +261,6 @@ export class Column extends PureComponent {
             <th className={className} style={style} onClick={this.onClick} no-export={noExport ? "true" : null} rowSpan={rowSpan} colSpan={colSpan}>
                 {children} {curField ? (curField === sortBy ? (<i className={`fa fa-sort-${isDesc ? "desc" : "asc"}`}></i>) : <i className="fa fa-sort"></i>) : null}
             </th>
-        );
-    }
-}
-
-export class TD extends PureComponent {
-    static contextType = TableContext;
-
-    render() {
-        return (
-            <td {...this.props}>
-
-            </td>
         );
     }
 }

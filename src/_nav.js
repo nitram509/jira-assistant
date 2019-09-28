@@ -39,16 +39,26 @@ export const navigation = [
         url: '/calendar',
         icon: 'fa fa-calendar'
     },
-    //{
-    //  name: 'Bulk import',
-    //  id: 'BIM',
-    //  url: '/bulkimport',
-    //  icon: 'fa fa-table',
-    //  badge: {
-    //    variant: 'info',
-    //    text: 'BETA'
-    //  }
-    //},
+    {
+        name: 'Import worklog',
+        id: 'IMW',
+        url: '/import/worklog',
+        icon: 'fa fa-clock-o',
+        badge: {
+            variant: 'info',
+            text: 'BETA'
+        }
+    },
+    {
+        name: 'Import issue',
+        id: 'IMI',
+        url: '/import/issue',
+        icon: 'fa fa-ticket',
+        badge: {
+            variant: 'info',
+            text: 'BETA'
+        }
+    },
     {
         title: true,
         name: 'Reports'

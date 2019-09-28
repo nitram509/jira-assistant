@@ -29,8 +29,8 @@ export class BaseGadget extends PureComponent {
 
         const gadgetActions = !this.isGadget ? [] : [
             { separator: true },
-            { label: "Full width", icon: `fa fa-${fullWidth ? "check" : "remove"}`, command: () => this.setSizeOptions(!fullWidth, fullHeight) },
-            { label: "Full height", icon: `fa fa-${fullHeight ? "check" : "remove"}`, command: () => this.setSizeOptions(fullWidth, !fullHeight) },
+            { label: "Full width", icon: `fa fa-${fullWidth ? "check-" : ""}circle fs-16 margin-r-5`, command: () => this.setSizeOptions(!fullWidth, fullHeight) },
+            { label: "Full height", icon: `fa fa-${fullHeight ? "check-" : ""}circle fs-16 margin-r-5`, command: () => this.setSizeOptions(fullWidth, !fullHeight) },
             { separator: true },
             { label: "Remove", icon: "fa fa-remove", command: () => this.removeGadget() }
         ];
@@ -42,7 +42,7 @@ export class BaseGadget extends PureComponent {
         ];
 
         return [
-            { label: "Refresh", icon: "fa fa-refresh", disabled: !this.refreshData || this.state.isLoading, command: () => this.refreshData(true) },
+            //{ label: "Refresh", icon: "fa fa-refresh", disabled: !this.refreshData || this.state.isLoading, command: () => this.refreshData(true) },
             { label: "Toggle full screen", icon: `fa fa-${isFullScreen ? "compress" : "expand"}`, command: () => this.toggleFullScreen() },
             ...exportOpts,
             ...gadgetActions
@@ -146,9 +146,9 @@ export class BaseGadget extends PureComponent {
     }
 
     getRefreshButton(callback) {
-        if (this.isGadget) { return null; }
+        const { disableRefresh, isLoading } = this.state;
 
-        return <Button icon="fa fa-refresh" onClick={callback || this.refreshData} title="Refresh data" />;
+        return <Button icon="fa fa-refresh" disabled={disableRefresh || isLoading} onClick={callback || this.refreshData} title="Refresh data" />;
     }
 
     exportData = (exportFormat) => {
@@ -171,6 +171,7 @@ export class BaseGadget extends PureComponent {
             <i className={`fa ${this.iconClass}`}></i> {title} {subTitle && <span> - {subTitle}</span>}
             <div className="pull-right">
                 {this.renderCustomActions && this.renderCustomActions()}
+                {!this.hideRefresh && this.getRefreshButton()}
                 {!this.hideMenu && <Button icon="fa fa-wrench" onClick={e => showContextMenu(e, this.getContextMenu())} />}
             </div>
         </div>;
@@ -214,8 +215,8 @@ export class BaseGadget extends PureComponent {
         return (<div ref={el => this.el = el} className="gadget half-width half-height">
             <Panel header="Gadget Unavailable">
                 <div className="pad-22">
-                    This section contains an un-implemented gadget.
-                    This gadget will be available soon while you try out other features in beta!
+                    This section contains an un-known gadget.
+                    Please report about this issue to have it fixed!
                 </div>
             </Panel>
         </div>);
