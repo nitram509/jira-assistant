@@ -20,11 +20,26 @@ body {
     margin-left: 10px;
 }
 
-#paneLeft {
-    /*
-        adjust left pane's background to match the header of the data grid
-        TODO [nitram509] find a smarter way to bring task list view and task time view on same vertical offset
-     */
-    background-color: #f9f9f9;
-    padding-top: 6px
+#paneRight {
+    background-color: white;
 }
+
+.react-grid-Grid {
+    /*see also https://github.com/adazzle/react-data-grid/issues/736*/
+    min-height: calc(100vh - 56px) !important;
+}
+
+svg.ganttTimelineChartComponent {
+    width: 100%;
+    min-height: calc(100vh) !important;
+}
+
+.timelineChart-rowText {
+    font-size: 14px;
+    fill: #c0c0c0;
+}
+
+.timelineChart-rowBar {
+    rx: 3px;
+}
+
